@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>7byte</title>
+  <subtitle>骐骥一跃，不能十步；驽马十驾，功在不舍</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://7byte.github.io/"/>
+  <updated>2016-12-26T13:35:05.365Z</updated>
+  <id>http://7byte.github.io/</id>
+  
+  <author>
+    <name>7byte</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>nginx反向代理（翻译）</title>
+    <link href="http://7byte.github.io/2016/12/11/nginx-reverse-proxy/"/>
+    <id>http://7byte.github.io/2016/12/11/nginx-reverse-proxy/</id>
+    <published>2016-12-11T03:16:27.000Z</published>
+    <updated>2016-12-26T13:35:05.365Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote>
+<p>英文原文：<a href="https://www.nginx.com/resources/admin-guide/reverse-proxy/" target="_blank" rel="external">https://www.nginx.com/resources/admin-guide/reverse-proxy/</a></p>
+</blockquote>
+<p>本文描述了代理服务器的基本配置。你将学会怎样使用各种协议把一个请求从NGINX转发到代理服务器、怎样修改发送给代理服务器的客户端请求头，以及怎样为来自代理服务器的请求响应配置缓存。</p>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li>介绍</li>
+<li>转发请求到代理服务器</li>
+<li>转发请求头</li>
+<li>配置缓存</li>
+<li>选择输出IP</li>
+</ul>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>代理通常用来把负载分发到若干服务器，由不同的网站无缝地提供内容，或者经由非HTTP的其它协议转发请求到应用服务器做处理。</p>
+<h2 id="转发请求到代理服务器"><a href="#转发请求到代理服务器" class="headerlink" title="转发请求到代理服务器"></a>转发请求到代理服务器</h2><p>当NGINX代理请求时，NGINX把请求发送给指定的代理服务器——获取到请求结果——把结果返回给客户端。请求可能被发送给HTTP服务器（另一个NGINX服务或者其它HTTP服务器），也可能通过特定的协议发送给非HTTP服务（运行基于特定框架开发的应用服务，例如PHP、Python）。支持的协议包括<a href="http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html" target="_blank" rel="external">FastCGI</a>、<a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html" target="_blank" rel="external">uwsgi</a>、<a href="http://nginx.org/en/docs/http/ngx_http_scgi_module.html" target="_blank" rel="external">SCGI</a>和<a href="http://nginx.org/en/docs/http/ngx_http_memcached_module.html" target="_blank" rel="external">memcached</a>。</p>
+<p>为了把一个请求转发到HTTP代理服务器，将<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_pass" target="_blank" rel="external">proxy_pass</a>指令添加到<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#location" target="_blank" rel="external">location</a>里面。例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">location /some/path/ &#123;</div><div class="line">    proxy_pass http://www.example.com/link/;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个配置示例会使所有由该location处理的请求转发到指定地址的代理服务器。这里的地址可以指定为一个域名或是一个IP，地址也可以带上端口：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">location ~ \.php &#123;</div><div class="line">    proxy_pass http://127.0.0.1:8000;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意到在第一个示例中，代理服务器的地址后面是一个URI：<strong>/link/</strong>。如果地址中指定了该URI，那么它会替换掉原始请求URI中与location参数匹配的部分。例如，这里的原始请求URI包含<strong>/some/path/page.html</strong>，转发的请求会替换成<strong><a href="http://www.example.com/link/page.html" target="_blank" rel="external">http://www.example.com/link/page.html</a></strong>。如果地址中没有指明URI，或者无法判断需要替换请求URI的哪部分，则会转发完整的请求（可能被修改过）。</p>
+<p>为了把一个请求转发到非HTTP代理服务器，必须使用适当的<strong>**_pass</strong>指令：</p>
+<ul>
+<li><a href="http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html?#fastcgi_pass" target="_blank" rel="external">fastcgi_pass</a> 转发请求到FastCGI服务器</li>
+<li><a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html?#uwsgi_pass" target="_blank" rel="external">uwsgi_pass</a> 转发请求到uwsgi服务器</li>
+<li><a href="http://nginx.org/en/docs/http/ngx_http_scgi_module.html?#scgi_pass" target="_blank" rel="external">scgi_pass</a> 转发请求到SCGI服务器</li>
+<li><a href="http://nginx.org/en/docs/http/ngx_http_memcached_module.html?#memcached_pass" target="_blank" rel="external">memcached_pass</a> 转发请求到memcached服务器</li>
+</ul>
+<p>请注意，在这些情况下，指定地址的规则可能会有所不同。你可能还需要将附加参数传递到服务器（请参见<a href="http://nginx.org/en/docs" target="_blank" rel="external">参考文档</a>的更多细节）。<br><a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_pass" target="_blank" rel="external">proxy_pass</a>指令也可以指向一组<a href="http://nginx.org/en/docs/http/load_balancing.html?#algorithms" target="_blank" rel="external">命名服务器</a>。在这种情况下，请求按照<a href="https://www.nginx.com/resources/admin-guide/load-balancer/" target="_blank" rel="external">指定的方式</a>被分发到组中的服务器。</p>
+<h2 id="转发请求头"><a href="#转发请求头" class="headerlink" title="转发请求头"></a>转发请求头</h2><p>NGINX默认会重新定义代理请求中的两个header字段：Host和Connection，并且去除值为空字符串的字段。Host设置为<strong>$proxy_host</strong>变量，Connection设置为<strong>close</strong>。</p>
+<p>如果要修改这些设置，或者修改其它header字段，就需要用到<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_set_header" target="_blank" rel="external">proxy_set_header</a>指令。这条指令可以放在<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#location" target="_blank" rel="external">location</a>或更高一级的位置，此外也可以放在特定的<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#server" target="_blank" rel="external">server</a>上下文或者<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#http" target="_blank" rel="external">http</a>块中，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">location /some/path/ &#123;</div><div class="line">    proxy_set_header Host $host;</div><div class="line">    proxy_set_header X-Real-IP $remote_addr;</div><div class="line">    proxy_pass http://localhost:8000;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这个配置中，Host字段被设置成<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#variables" target="_blank" rel="external">$host</a>变量。</p>
+<p>为了防止一个header字段被传递给代理服务器，可以将其设置为空字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">location /some/path/ &#123;</div><div class="line">    proxy_set_header Accept-Encoding &quot;&quot;;</div><div class="line">    proxy_pass http://localhost:8000;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="配置缓存"><a href="#配置缓存" class="headerlink" title="配置缓存"></a>配置缓存</h2><p>在默认情况下，NGINX会缓存来自代理服务器的响应。响应会存储在内部缓冲区中，直到接收到完整的数据才将响应内容发送给客户端，这样就有助于优化与慢客户端之间的交互体验，反之，如果响应以同步的方式从NGINX服务器发送给客户端，将会对代理服务器造成浪费。当启用缓存，NGINX允许代理服务器迅速地处理响应（而无须等待客户端接收），与此同时NGINX存储响应数据以保证客户端有充足的时间下载。</p>
+<p>负责启用和禁用缓存的指令是<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_buffering" target="_blank" rel="external">proxy_buffering</a>。默认情况下它被设置为<strong>on</strong>：启用缓存。</p>
+<p><a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_buffers" target="_blank" rel="external">proxy_buffers</a>指令控制分配给一个请求的缓冲区大小和数量。来自代理服务器的第一份响应数据被存储在单独的缓冲区，这块缓冲区的大小由<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_buffer_size" target="_blank" rel="external">proxy_buffer_size</a>指令指定。该缓冲区通常包含相对较小的响应header以及剩余可以可以被塞进缓冲区的响应数据。</p>
+<p>在下面的例子中，缓冲区的默认数量被加大了，并且第一份响应数据的缓冲区大小小于默认的缓冲区大小。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">location /some/path/ &#123;</div><div class="line">    proxy_buffers 16 4k;</div><div class="line">    proxy_buffer_size 2k;</div><div class="line">    proxy_pass http://localhost:8000;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果缓存被禁用，NGINX一旦接收到来自代理服务器的响应将会同步地发送给客户端。对要求尽可能实时的快速交互式客户端来说这种方式是可取的。</p>
+<p>如果要禁用特定location中的缓存，则将location中的<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_buffering" target="_blank" rel="external">proxy_buffering</a>设置为<strong>off</strong>，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">location /some/path/ &#123;</div><div class="line">    proxy_buffering off;</div><div class="line">    proxy_pass http://localhost:8000;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在这种情况下，NGINX仅使用由<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_buffer_size" target="_blank" rel="external">proxy_buffer_size</a>配置的缓存区来存储当前响应数据。</p>
+<p>反向代理的一个常见用途是提供负载平衡。阅读电子书<a href="https://www.nginx.com/resources/library/five-reasons-choose-software-load-balancer/" target="_blank" rel="external"> Five Reasons to Choose a Software Load Balancer</a>，了解如何提高性能、专注快速部署你的应用。</p>
+<h2 id="选择输出IP"><a href="#选择输出IP" class="headerlink" title="选择输出IP"></a>选择输出IP</h2><p>如果你的代理服务器有多个网络接口，有时候你可能需要选择一个特定的源IP用于连接到代理服务器或上游服务器（upstream）。当NGINX后端的代理服务器配置为接受来自特定IP网络或IP地址范围的连接时，这样是设置是很有用处的。</p>
+<p>指定<a href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html?#proxy_bind" target="_blank" rel="external">proxy_bind</a>指令和必要的网络接口的IP地址：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">location /app1/ &#123;</div><div class="line">    proxy_bind 127.0.0.1;</div><div class="line">    proxy_pass http://example.com/app1/;</div><div class="line">&#125;</div><div class="line"></div><div class="line">location /app2/ &#123;</div><div class="line">    proxy_bind 127.0.0.2;</div><div class="line">    proxy_pass http://example.com/app2/;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>也可以用一个变量来指定IP地址。例如，<a href="http://nginx.org/en/docs/http/ngx_http_core_module.html?#var_server_addr" target="_blank" rel="external">$var_server_addr</a>变量表示接收客户端请求的网络接口的IP地址：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">location /app3/ &#123;</div><div class="line">    proxy_bind $server_addr;</div><div class="line">    proxy_pass http://example.com/app3/;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;英文原文：&lt;a href=&quot;https://www.nginx.com/resources/admin-guide/reverse-proxy/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://www.nginx.c
+    
+    </summary>
+    
+      <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
+    
+      <category term="反向代理" scheme="http://7byte.github.io/tags/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>golang环境搭建</title>
+    <link href="http://7byte.github.io/2016/11/14/trytouse-golang/"/>
+    <id>http://7byte.github.io/2016/11/14/trytouse-golang/</id>
+    <published>2016-11-14T06:33:04.000Z</published>
+    <updated>2017-01-13T16:39:36.667Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。<br>本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（<a href="https://golang.org/doc/install" target="_blank" rel="external">安装golang</a>），以及安装包下载页面（<a href="https://golang.org/dl/" target="_blank" rel="external">下载安装包</a>）。<br>本人目前还买不起Mac，故无法验证Mac上安装流程的可行性，等将来剁手了再来补充相关内容。</p>
+<p><strong><em>温馨提示：部分步骤可能需要科学上网。</em></strong></p>
+<h2 id="Linux环境"><a href="#Linux环境" class="headerlink" title="Linux环境"></a>Linux环境</h2><ol>
+<li><p>下载压缩包，例如当前最新的版本是1.7.3：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ wget https://storage.googleapis.com/golang/go1.7.3.linux-amd64.tar.gz</div></pre></td></tr></table></figure>
+</li>
+<li><p>提取压缩包内容到 /usr/local 目录：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo tar -C /usr/local -xzf go1.7.3.linux-amd64.tar.gz</div></pre></td></tr></table></figure>
+</li>
+<li><p>将 /usr/local/go/bin 添加到PATH环境变量，将此行添加到你的 /etc/profile（全系统安装）或 $HOME/.profile 文件中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">export PATH=$PATH:/usr/local/go/bin</div></pre></td></tr></table></figure>
+<p>然后让新添加的配置生效：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ source /etc/profile</div></pre></td></tr></table></figure>
+</li>
+<li><p>添加自己的工作目录，将此行添加到 $HOME/.profile 文件中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">export GOPATH=$HOME/gowork</div></pre></td></tr></table></figure>
+<p>同样的让新添加的配置生效，gowork目录如果不存在则创建：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ mkdir $HOME/gowork</div><div class="line">$ source $HOME/.profile</div></pre></td></tr></table></figure>
+</li>
+<li><p>验证安装。使用<code>go env</code>命令查看golang环境：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">$ go env</div><div class="line">GOARCH=&quot;amd64&quot;</div><div class="line">GOBIN=&quot;&quot;</div><div class="line">GOEXE=&quot;&quot;</div><div class="line">GOHOSTARCH=&quot;amd64&quot;</div><div class="line">GOHOSTOS=&quot;linux&quot;</div><div class="line">GOOS=&quot;linux&quot;</div><div class="line">GOPATH=&quot;/home/7byte/gowork&quot;</div><div class="line">GORACE=&quot;&quot;</div><div class="line">GOROOT=&quot;/usr/lib/golang&quot;</div><div class="line">GOTOOLDIR=&quot;/usr/lib/golang/pkg/tool/linux_amd64&quot;</div><div class="line">GO15VENDOREXPERIMENT=&quot;1&quot;</div><div class="line">CC=&quot;gcc&quot;</div><div class="line">GOGCCFLAGS=&quot;-fPIC -m64 -pthread -fmessage-length=0&quot;</div><div class="line">CXX=&quot;g++&quot;</div><div class="line">CGO_ENABLED=&quot;1&quot;</div></pre></td></tr></table></figure>
+<p>在 $GOPATH/src/ 创建 hello 目录，新建 helloworld.go 文件并输入以下代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">    fmt.Printf(<span class="string">"hello, world\n"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行我们的hello程序，如果得到以下输出说明配置成功。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ go run helloworld.go </div><div class="line">hello, world</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="Windows环境"><a href="#Windows环境" class="headerlink" title="Windows环境"></a>Windows环境</h2><p>Windows环境下golang环境搭建和Linux类似，官网上提供了msi安装包，安装过程和普通PC软件安装一致，基本只要“下一步”就可以了。安装程序会设置默认的<code>%GOROOT%\bin</code>（c:\Go\bin）目录到<code>Path</code>环境变量，如果自定义安装目录，需要手动修改<code>GOROOT</code>和<code>Path</code>环境变量。<br>同样的，我们需要添加自己的工作目录。在环境变量中添加<code>GOPATH</code>，变量值即工作目录，例如<code>E:\code\gowork</code>。<br>设置GOBIN环境变量<code>%GOPATH%\bin</code>，并添加到Path环境变量<br>验证安装的方式与Linux中相同，参考上一小节第5条。</p>
+<h2 id="安装git"><a href="#安装git" class="headerlink" title="安装git"></a>安装git</h2><p>必须安装git客户端，否则 go get 将无法正常执行。git的安装过程作为程序员的基本技能不在此详细记录。</p>
+<h2 id="安装golint和goimports"><a href="#安装golint和goimports" class="headerlink" title="安装golint和goimports"></a>安装golint和goimports</h2><p>什么是<a href="https://github.com/golang/lint" target="_blank" rel="external">golint</a>：</p>
+<blockquote>
+<p>Golint is a linter for Go source code. </p>
+</blockquote>
+<p>wiki对<a href="https://zh.wikipedia.org/wiki/Lint" target="_blank" rel="external">lint</a>的解释：</p>
+<blockquote>
+<p>在计算机科学中，lint是一种工具程序的名称，它用来标记源代码中，某些可疑的、不具结构性（可能造成bug）的段落。它是一种静态程序分析工具，最早适用于C语言，在UNIX平台上开发出来。后来它成为通用术语，可用于描述在任何一种计算机程序语言中，用来标记源代码中有疑义段落的工具。</p>
+</blockquote>
+<p>安装golint：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">go get -u github.com/golang/lint/golint</div></pre></td></tr></table></figure></p>
+<p>安装完成后会在GOPATH\bin目录下生成一个名为<code>golint</code>的执行文件。golint支持对Go源文件、目录或包做静态分析，例如要检查当前目录下的所有Go源文件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">golint ./...</div></pre></td></tr></table></figure></p>
+<p>什么是<a href="https://godoc.org/golang.org/x/tools/cmd/goimports" target="_blank" rel="external">goimports</a>：</p>
+<blockquote>
+<p>Command goimports updates your Go import lines, adding missing ones and removing unreferenced ones.</p>
+</blockquote>
+<p>安装goimports<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">go get golang.org/x/tools/cmd/goimports</div></pre></td></tr></table></figure></p>
+<p>后文对golint和goimports这两个工具在编辑器中的配置将做进一步说明。</p>
+<h2 id="测试工具GoConvey"><a href="#测试工具GoConvey" class="headerlink" title="测试工具GoConvey"></a>测试工具GoConvey</h2><p>完善的测试用例对提高代码质量的帮助不言而喻，在github上随手翻几个golang开源项目，可以发现每一个项目都带有详细的测试用例，可见为自己的golang代码写测试case已经是一项约定俗成的圈内规范。Go语言中自带有一个轻量级的测试框架testing和自带的go test命令来实现单元测试。但是go test的结果不够直观，并且每次都要手动敲命令也比较麻烦，所以我用到了<a href="http://goconvey.co/" target="_blank" rel="external">GoConvey</a>这个开源测试工具。<br>GoConvey使用起来非常简单：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ go get github.com/smartystreets/goconvey</div><div class="line">$ $GOPATH/bin/goconvey</div></pre></td></tr></table></figure></p>
+<p>然后在浏览器打开<a href="http://127.0.0.1:8080/" target="_blank" rel="external">http://127.0.0.1:8080/</a> ，就能看到当前工程目录下所有*_test.go的测试情况了。<br>添加一个测试文件helloworld_test.go<br><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">    <span class="string">"fmt"</span></div><div class="line">    <span class="string">"testing"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestHello</span><span class="params">(t *testing.T)</span></span> &#123;</div><div class="line">    fmt.Println(<span class="string">"test OK!"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>保存之后可以看到浏览器页面几秒后自动刷新，测试通过效果图：</p>
+<div align="center"><br><img src="/images/20161207214519.png" alt=""><br></div>
+
+<p>修改TestHello的代码：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestHello</span><span class="params">(t *testing.T)</span></span> &#123;</div><div class="line">    fmt.Println(<span class="string">"test OK?"</span>)</div><div class="line">    t.Error(<span class="string">"test not OK!"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>再次刷新后测试不通过：</p>
+<div align="center"><br><img src="/images/20161207220023.png" alt=""><br></div>
+
+<h2 id="配置Sublime-Text"><a href="#配置Sublime-Text" class="headerlink" title="配置Sublime Text"></a>配置Sublime Text</h2><p><a href="https://www.sublimetext.com/" target="_blank" rel="external">Sublime Text</a>是一款非常好用的编辑器，自带很多强大的文本编辑功能，并且有丰富的插件扩展，完全可以胜任golang日常实际开发。</p>
+<p><a href="https://github.com/DisposaBoy/GoSublime" target="_blank" rel="external">GoSublime</a>插件提供了很多类golang IDE的功能，例如自动代码补全等等，能够很好地提高开发效率。</p>
+<p>Sublime的插件一般都是基于Python开发，所以测试机上Python环境是必不可少的。Linux系统默认自带Python，但如果是Windows则需要自己安装。与git安装相同，Python安装过程不在此详细记录。</p>
+<p>Python环境搭建完成，然后我们首先需要安装Sublime插件管理器Package Control，借助该工具我们可以非常方便地搜索、安装、更新Sublime上的众多插件。依据官方安装说明的建议，我在这里只贴出原始安装文档页面链接，请到官方页面获取安装代码：<a href="https://packagecontrol.io/installation" target="_blank" rel="external">https://packagecontrol.io/installation</a></p>
+<div align="center"><br><img src="/images/20170113230448.jpg" alt=""><br></div>
+
+<p>Package Control安装完成，使用快捷键<code>ctrl+shift+p</code>或者打开菜单栏 Preferences &gt; Package Control 调出Package Control对话框，输入<code>install</code>，在下拉选项中选择<code>Package Control: Install Package</code>，然后输入<code>GoSublime</code>，Package Control将会安装对应插件。<br>接下来是对GoSublime插件的基本设置，打开菜单栏 Preferences &gt; Package Settings &gt; GoSublime &gt; Settiongs-User 修改用户设置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    &quot;env&quot;:&#123;</div><div class="line">        &quot;GOPATH&quot;:&quot;E:/code/gowork&quot;</div><div class="line">    &#125;,</div><div class="line">    &quot;fmt_cmd&quot;: [</div><div class="line">      &quot;goimports&quot;</div><div class="line">    ],</div><div class="line">    &quot;on_save&quot;:[</div><div class="line">        &#123;</div><div class="line">            &quot;cmd&quot;:&quot;gs9o_open&quot;,</div><div class="line">            &quot;args&quot;:&#123;</div><div class="line">                &quot;run&quot;:[</div><div class="line">                    &quot;sh&quot;,</div><div class="line">                    &quot;go vet&quot;</div><div class="line">                ],</div><div class="line">                &quot;focus_view&quot;:false</div><div class="line">            &#125;</div><div class="line">        &#125;,</div><div class="line">        &#123;</div><div class="line">            &quot;cmd&quot;:&quot;gs9o_open&quot;,</div><div class="line">            &quot;args&quot;:&#123;</div><div class="line">                &quot;run&quot;:[</div><div class="line">                    &quot;golint&quot;,</div><div class="line">                    &quot;.&quot;</div><div class="line">                ],</div><div class="line">                &quot;focus_view&quot;:false</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    ]</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>该配置参考了这篇文章：<a href="https://www.goinggo.net/2016/05/installing-go-and-your-workspace.html" target="_blank" rel="external">https://www.goinggo.net/2016/05/installing-go-and-your-workspace.html</a></p>
+<p>至此，golang环境搭建基本完成，可以尽情地写代码了！</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。&lt;
+    
+    </summary>
+    
+      <category term="golang" scheme="http://7byte.github.io/categories/golang/"/>
+    
+    
+      <category term="golang" scheme="http://7byte.github.io/tags/golang/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>openresty中连接池的应用</title>
+    <link href="http://7byte.github.io/2016/10/02/trytouse-conn-pool/"/>
+    <id>http://7byte.github.io/2016/10/02/trytouse-conn-pool/</id>
+    <published>2016-10-02T07:16:27.000Z</published>
+    <updated>2016-11-20T10:59:54.517Z</updated>
+    
+    <content type="html"><![CDATA[<p>在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。<br>在 OpenResty 中，所有具备 set_keepalive 的类、库函数，说明他都是支持连接池的。这里举个mysql连接池的例子，其它类型的连接池比如redis连接池、线程池、内存池思路是一样的。</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">local</span> MYSQL = <span class="built_in">require</span>(<span class="string">"resty.mysql"</span>)</div><div class="line"><span class="keyword">local</span> JSON  = <span class="built_in">require</span>(<span class="string">"cjson"</span>)</div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql_server_ip                       =   <span class="string">"127.0.0.1"</span></div><div class="line"><span class="keyword">local</span> mysql_server_port                     =   <span class="number">3306</span></div><div class="line"><span class="keyword">local</span> mysql_databases                       =   <span class="string">"mysql"</span></div><div class="line"><span class="keyword">local</span> mysql_user_name                       =   <span class="string">"7byte"</span></div><div class="line"><span class="keyword">local</span> mysql_user_pass                       =   <span class="string">"abcdefg"</span></div><div class="line"><span class="keyword">local</span> mysql_max_packet_size                 =   <span class="number">1024</span> * <span class="number">1024</span></div><div class="line"></div><div class="line"><span class="comment">-- 获取mysql连接，mysql:connect先在连接池中查找是否有可用的连接，没有才创建一个新连接</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">getMysql</span><span class="params">()</span></span></div><div class="line">    <span class="keyword">local</span> mysql = MYSQL:new()</div><div class="line">    mysql:set_timeout(<span class="number">1000</span>)</div><div class="line">    <span class="keyword">local</span> ok, err, errno, sqlstate = mysql:connect&#123;</div><div class="line">        host = mysql_server_ip,</div><div class="line">        port = mysql_server_port,</div><div class="line">        database = mysql_databases,</div><div class="line">        user = mysql_user_name,</div><div class="line">        password = mysql_user_pass,</div><div class="line">        max_packet_size = mysql_max_packet_size,</div><div class="line">        charset=utf8 &#125;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">        <span class="keyword">return</span> <span class="keyword">nil</span>, err, errno, sqlstate</div><div class="line">    <span class="keyword">end</span></div><div class="line">    <span class="keyword">return</span> mysql,<span class="keyword">nil</span>,<span class="keyword">nil</span>,sqlstate</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="comment">-- 释放mysql连接，放入连接池</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">releaseConn</span><span class="params">(mysqlConn)</span></span></div><div class="line">    <span class="keyword">local</span> ok = <span class="keyword">true</span></div><div class="line">    <span class="keyword">local</span> db_type = <span class="number">0</span></div><div class="line">    <span class="keyword">local</span> err = <span class="string">""</span></div><div class="line">    <span class="keyword">if</span> mysqlConn <span class="keyword">then</span></div><div class="line">        <span class="keyword">local</span> res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">while</span> err == <span class="string">"again"</span> <span class="keyword">do</span></div><div class="line">            res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">end</span></div><div class="line">        <span class="comment">-- setkeepalive(maxidletimeout, poolsize)</span></div><div class="line">        <span class="keyword">local</span> ok, err = mysqlConn:set_keepalive(<span class="number">0</span>, <span class="number">1000</span>)</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">            mysqlConn:close()</div><div class="line">            ok = <span class="keyword">false</span></div><div class="line">            err = <span class="string">"MySQL.Error ( "</span>..(err <span class="keyword">or</span> <span class="string">"null"</span>)..<span class="string">" ) "</span></div><div class="line">        <span class="keyword">end</span></div><div class="line">    <span class="keyword">end</span> </div><div class="line">    <span class="keyword">return</span> ok, db_type, err</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql, err = getMysql()</div><div class="line"><span class="keyword">if</span> <span class="keyword">not</span> mysql <span class="keyword">then</span></div><div class="line">    ngx.say(err)</div><div class="line"><span class="keyword">else</span></div><div class="line">    <span class="keyword">local</span> sql = <span class="string">"SELECT * FROM help_topic"</span></div><div class="line">    <span class="keyword">local</span> res1, err, errno, sqlstate = mysql:query(sql)</div><div class="line"></div><div class="line">    <span class="comment">-- ngx.log(ngx.ERR, "get_reused_times: "..mysql:get_reused_times())</span></div><div class="line"></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> res1 <span class="keyword">then</span></div><div class="line">        ngx.say(JSON.encode(&#123;<span class="string">"query failed!"</span>&#125;))</div><div class="line">    <span class="keyword">else</span></div><div class="line">        ngx.say(JSON.encode(res1))</div><div class="line">    <span class="keyword">end</span></div><div class="line">    releaseConn(mysql)</div><div class="line">    ngx.exit(ngx.HTTP_OK)</div><div class="line">    <span class="keyword">return</span></div><div class="line"><span class="keyword">end</span></div></pre></td></tr></table></figure>
+<p>wrk本机压测结果。<br>不使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql </div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency     1.16s   386.87ms   1.99s    62.06%</div><div class="line">    Req/Sec    19.50     15.57    90.00     79.12%</div><div class="line">  2454 requests in 30.08s, 1.72GB read</div><div class="line">  Socket errors: connect 0, read 0, write 0, timeout 100</div><div class="line">Requests/sec:     81.59</div><div class="line">Transfer/sec:     58.51MB</div></pre></td></tr></table></figure></p>
+<p>使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql</div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency    93.98ms  113.50ms   1.81s    99.24%</div><div class="line">    Req/Sec    57.05     31.40   111.00     47.95%</div><div class="line">  2673 requests in 30.09s, 1.87GB read</div><div class="line">  Socket errors: connect 0, read 18, write 0, timeout 30</div><div class="line">Requests/sec:     88.84</div><div class="line">Transfer/sec:     63.71MB</div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。&lt;br&gt;在
+    
+    </summary>
+    
+      <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
+    
+      <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>wrk压力测试</title>
+    <link href="http://7byte.github.io/2016/10/02/trytouse-wrk/"/>
+    <id>http://7byte.github.io/2016/10/02/trytouse-wrk/</id>
+    <published>2016-10-02T07:12:27.000Z</published>
+    <updated>2016-11-20T10:59:54.518Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="https://github.com/wg/wrk" target="_blank" rel="external">wrk</a>是一个开源的http性能测试工具，项目在github维护<br>wrk的使用非常简单，首先需要已经安装了git，gcc这两个基础工具，然后依次执行下面的3个命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ git clone https://github.com/wg/wrk.git  </div><div class="line">$ cd wrk  </div><div class="line">$ make</div></pre></td></tr></table></figure></p>
+<p>编译成功会在目录下生成执行文件wrk，准备工作完成。<br>参考github上给出的例子，做一下简单的使用说明。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ wrk -t12 -c400 -d30s http://127.0.0.1:8080/index.html</div></pre></td></tr></table></figure></p>
+<p>-t 使用的线程个数<br>-c HTTP连接的最大个数<br>-d 压测时间</p>
+<p>  Output:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Running 30s test @ http://127.0.0.1:8080/index.html</div><div class="line">  12 threads and 400 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency   635.91us    0.89ms  12.92ms   93.69%</div><div class="line">    Req/Sec    56.20k     8.07k   62.00k    86.54%</div><div class="line">  22464657 requests in 30.00s, 17.76GB read</div><div class="line">Requests/sec: 748868.53</div><div class="line">Transfer/sec: 606.33MB</div></pre></td></tr></table></figure></p>
+<p>Latency：响应时间<br>Req/Sec：每个线程每秒完成的请求数<br>Requests/sec：每秒完成的请求数<br>Transfer/sec：每秒数据传输量</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;&lt;a href=&quot;https://github.com/wg/wrk&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;wrk&lt;/a&gt;是一个开源的http性能测试工具，项目在github维护&lt;br&gt;wrk的使用非常简单，首先需要已经安装了git，gcc这两个基
+    
+    </summary>
+    
+      <category term="性能测试" scheme="http://7byte.github.io/categories/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
+    
+    
+      <category term="性能测试" scheme="http://7byte.github.io/tags/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>动态追踪工具——火焰图</title>
+    <link href="http://7byte.github.io/2016/10/02/trytouse-FlameGraph/"/>
+    <id>http://7byte.github.io/2016/10/02/trytouse-FlameGraph/</id>
+    <published>2016-10-02T07:10:27.000Z</published>
+    <updated>2016-11-20T10:59:54.516Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote>
+<p>火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——<a href="https://openresty.org/posts/dynamic-tracing/" target="_blank" rel="external">动态追踪技术漫谈</a></p>
+</blockquote>
+<p>下面介绍下火焰图相关工具的安装和使用。</p>
+<ul>
+<li><p>首先需要安装内核开发包和调试包。查看当前系统的内核版本：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ uname -r</div><div class="line">3.10.0-327.28.2.el7.x86_64</div></pre></td></tr></table></figure>
+</li>
+<li><p>然后进入 <a href="http://debuginfo.centos.org/" target="_blank" rel="external">http://debuginfo.centos.org/</a> ，可以看到有 4/ 5/ 6/ 7/ 这样的目录，这些目录分别对应了centos系统的大版本。找到并下载自己的系统内核版本对应的包：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ wget &quot;http://debuginfo.centos.org/7/x86_64/kernel-debuginfo-($version).rpm&quot;</div><div class="line">$ wget &quot;http://debuginfo.centos.org/7/x86_64/kernel-debuginfo-common-($version).rpm&quot;</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装上面的开发包和调试包，并安装内核探测工具 systemtap</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ sudo rpm -ivh kernel-debuginfo-common-($version).rpm</div><div class="line">$ sudo rpm -ivh kernel-debuginfo-($version).rpm</div><div class="line">$ sudo yum install kernel-devel-($version)</div><div class="line">$ sudo yum install systemtap</div></pre></td></tr></table></figure>
+</li>
+<li><p>下载火焰图绘制相关工具</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ git clone https://github.com/openresty/nginx-systemtap-toolkit.git</div><div class="line">$ git clone https://github.com/brendangregg/FlameGraph.git</div></pre></td></tr></table></figure>
+</li>
+<li><p>然后测试下有没有安装成功<br>通过ps命令查看当前 nginx worker 进程的PID，如果有多个worker选择其中一个即可，下面是我测试时查询到的结果 PID=14489</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ ps -ef | grep nginx</div><div class="line">root      1580     1  0 11:36 ?        00:00:00 nginx: master process /usr/local/openresty/nginx/sbin/nginx -c /home/7byte/openresty-test/conf/nginx.conf</div><div class="line">nobody   14489  1580  0 13:46 ?        00:00:00 nginx: worker process</div></pre></td></tr></table></figure>
+<p>  这里我选用了工具包里的 sample-bt 来验证，它抓取的是C级别的运行状态，参数 -p 表示要抓取的进程id，-t是探测的时间，单位是秒，-u表示抓取用户空间，对应的-k表示内核空间，探测结果输出到 a.bt</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ mkdir svg</div><div class="line">$ sudo nginx-systemtap-toolkit/./sample-bt -p 14489 -t 20 -u &gt; svg/a.bt</div><div class="line">WARNING: Tracing 14489 (/usr/local/openresty/nginx/sbin/nginx) in user-space only...</div><div class="line">WARNING: Time&apos;s up. Quitting now...(it may take a while)</div></pre></td></tr></table></figure>
+<p>  得到 a.bt 后再用 FlameGraph 提供的两个脚本处理输出结果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ FlameGraph/stackcollapse-stap.pl svg/a.bt &gt; svg/a.cbt</div><div class="line">$ FlameGraph/flamegraph.pl svg/a.cbt &gt; svg/a.svg</div></pre></td></tr></table></figure>
+<p>  最后生成的 a.svg 就是火焰图，用浏览器打开即可，效果如下图：<br><img src="/images/08-30-13-36-12.jpg" alt=""><br>  每个框代表一个栈里的一个函数；<br>Y轴代表栈深度（栈桢数）。最顶端的框显示正在运行的函数，这之下的框都是调用者。在下面的函数是上面函数的父函数；<br>X轴代表采样总量。从左到右并不代表时间变化，从左到右也不具备顺序性；<br>框的宽度代表占用CPU总时间。宽的框代表的函数可能比窄的运行慢，或者被调用了更多次数。框的颜色深浅也没有任何意义；<br>如果是多线程同时采样，采样总数会超过总时间。</p>
+</li>
+<li><p>然后再测试下抓取lua级别的火焰图，这里需要使用另外一个工具 ngx-sample-lua-bt ， –luajit20 表示nginx使用luajit2.0，如果使用的是标准lua则使用 –lua51</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ sudo nginx-systemtap-toolkit/./ngx-sample-lua-bt -p 2834 --luajit20 -t 20 &gt; svg/a.bt</div><div class="line">WARNING: missing unwind/symbol data for module &apos;kernel&apos;</div><div class="line">WARNING: Tracing 2836 (/usr/local/openresty/nginx/sbin/nginx) for LuaJIT 2.0...</div><div class="line">WARNING: Time&apos;s up. Quitting now...</div></pre></td></tr></table></figure>
+<p>  对输出文件 a.bt 的后续处理与上文基本相同。另外可以预处理一下输出文件，增强可读性：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ nginx-systemtap-toolkit/./fix-lua-bt svg/a.bt &gt; svg/tmp.bt</div><div class="line">$ FlameGraph/stackcollapse-stap.pl svg/tmp.bt &gt; svg/a.cbt</div><div class="line">$ FlameGraph/flamegraph.pl svg/a.cbt &gt; svg/a.svg</div></pre></td></tr></table></figure>
+<p>  输出效果如下图：<br><img src="/images/08-30-13-36-13.jpg" alt=""></p>
+<p>  遇到的问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">$ sudo nginx-systemtap-toolkit/./ngx-sample-lua-bt -p 2039 --luajit20 -t 5 &gt; svg/a.bt</div><div class="line">WARNING: cannot find module /usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0 debuginfo: No DWARF information found [man warning::debuginfo]</div><div class="line">WARNING: Bad $context variable being substituted with literal 0: identifier &apos;$L&apos; at &lt;input&gt;:17:30</div><div class="line"> source:         lua_states[my_pid] = $L</div><div class="line">                                      ^</div><div class="line">semantic error: type definition &apos;TValue&apos; not found in &apos;/usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0&apos;: operator &apos;@cast&apos; at :62:12</div><div class="line">        source:     return @cast(tvalue, &quot;TValue&quot;, &quot;/usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0&quot;)-&gt;fr-&gt;tp-&gt;ftsz</div><div class="line">                           ^</div><div class="line"></div><div class="line">Pass 2: analysis failed.  [man error::pass2]</div><div class="line">Number of similar warning messages suppressed: 100.</div><div class="line">Rerun with -v to see them.</div></pre></td></tr></table></figure>
+<p>  在使用 ngx-sample-lua-bt 探测lua级别的火焰图时遇到了失败的情况，从错误信息来看是找不到 DWARF 调试信息。查找官网资料，貌似在很早以前 openresty 自带的 LuaJIT 2.0 默认就会启用 DWARF 调试信息，那我用的最新版怎么就是没有调试信息呢？折腾了好久，最后我到 luajit 官网下载了当前 openresty 版本对应的 luajit 源码，然后编译</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ make CCDEBUG=-g -B -j8</div></pre></td></tr></table></figure>
+<p>  备份然后替换 /usr/local/openresty/luajit 目录下的两个文件，重启 openresty之后问题解决。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">$ cd /usr/local/openresty/luajit/bin/</div><div class="line">$ sudo cp luajit-2.1.0-beta2 luajit-2.1.0-beta2_20160829</div><div class="line">$ sudo cp ~/LuaJIT-2.1.0-beta2/src/luajit/luajit luajit-2.1.0-beta2</div><div class="line"></div><div class="line">$ cd /usr/local/openresty/luajit/lib/</div><div class="line">$ sudo cp libluajit-5.1.so.2.1.0 libluajit-5.1.so.2.1.0_20160829</div><div class="line">$ sudo cp ~/LuaJIT-2.1.0-beta2/src/libluajit.so libluajit-5.1.so.2.1.0</div></pre></td></tr></table></figure>
+<p>  从上面的分析可以看出，使用火焰图可以精确地定位 nginx + lua 潜在的性能问题，对CPU占用率低、吐吞量低的情况也可以使用火焰图的方式排查程序中是否有阻塞调用导致整个架构的吞吐量低下。<br>根据官网的说明，火焰图本身对系统性能的影响较小，每秒请求数会下降11%：</p>
+<blockquote>
+<p>The overhead exposed on the target process is usually small. For example, the throughput (req/sec) limit of an nginx worker process doing simplest “hello world” requests drops by only 11% (only when this tool is running), as measured by ab -k -c2 -n100000 when using Linux kernel 3.6.10 and systemtap 2.5. The impact on full-fledged production processes is usually smaller than even that, for instance, only 6% drop in the throughput limit is observed in a production-level Lua CDN application.</p>
+</blockquote>
+</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——&lt;a href=&quot;https://openresty.org/
+    
+    </summary>
+    
+      <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
+    
+      <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="性能测试" scheme="http://7byte.github.io/tags/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
+    
+      <category term="动态追踪" scheme="http://7byte.github.io/tags/%E5%8A%A8%E6%80%81%E8%BF%BD%E8%B8%AA/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>初尝openresty</title>
+    <link href="http://7byte.github.io/2016/08/20/trytouse-openresty/"/>
+    <id>http://7byte.github.io/2016/08/20/trytouse-openresty/</id>
+    <published>2016-08-20T06:07:06.000Z</published>
+    <updated>2016-11-20T10:59:54.518Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="测试机配置"><a href="#测试机配置" class="headerlink" title="测试机配置"></a>测试机配置</h2><ul>
+<li>CPU： 1核 Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz </li>
+<li>内存： 1024 MB</li>
+<li>操作系统： CentOS 7.2 64位</li>
+<li>带宽： 1Mbps<br>没错，就是阿里云最低配的服务器。</li>
+</ul>
+<h2 id="OpenResty"><a href="#OpenResty" class="headerlink" title="OpenResty"></a>OpenResty</h2><blockquote>
+<p><a href="http://openresty.org/cn/" target="_blank" rel="external">OpenResty</a> ™ 是一个基于 <a href="http://nginx.org" target="_blank" rel="external">Nginx</a> 与 Lua 的高性能 Web 平台，其内部集成了大量精良的 Lua 库、第三方模块以及大多数的依赖项。用于方便地搭建能够处理超高并发、扩展性极高的动态 Web 应用、Web 服务和动态网关。</p>
+</blockquote>
+<h3 id="安装OpenResty"><a href="#安装OpenResty" class="headerlink" title="安装OpenResty"></a>安装OpenResty</h3><p>因为测试机安装的是CentOS系统，所以我选择了OpenResty官方Yum资源库提供的PRM包。<br>首先在CentOS系统中添加openresty资源库，创建一个名为/etc/yum.repos.d/OpenResty.repo 的文件，内容如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">[openresty]</div><div class="line">name=Official OpenResty Repository</div><div class="line">baseurl=https://copr-be.cloud.fedoraproject.org/results/openresty/openresty/epel-$releasever-$basearch/</div><div class="line">skip_if_unavailable=True</div><div class="line">gpgcheck=1</div><div class="line">gpgkey=https://copr-be.cloud.fedoraproject.org/results/openresty/openresty/pubkey.gpg</div><div class="line">enabled=1</div><div class="line">enabled_metadata=1</div></pre></td></tr></table></figure></p>
+<p>然后就可以通过yum指令安装openresty了<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo yum install openresty</div></pre></td></tr></table></figure></p>
+<p>其它操作系统和安装方式，可以参考OpenResty官网说明。</p>
+<h3 id="创建自己的应用目录"><a href="#创建自己的应用目录" class="headerlink" title="创建自己的应用目录"></a>创建自己的应用目录</h3><p>为了避免污染/usr/local/openresty/下的OpenResty安装内容，我们最好创建自己的工作目录：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ mkdir ~/openresty-test ~/openresty-test/logs/ ~/openresty-test/conf/</div></pre></td></tr></table></figure></p>
+<p>在刚刚创建的 ~/openresty-test/conf/ 目录下新建配置文件nginx.conf，可以从安装目录拷贝一份过来：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ cp /usr/local/openresty/nginx/conf/nginx.conf ~/openresty-test/conf/</div></pre></td></tr></table></figure></p>
+<p>修改nginx.conf，返回经典的“Hello, world!”<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">worker_processes  1;        #nginx worker 数量</div><div class="line"></div><div class="line">events &#123;</div><div class="line">    worker_connections 1024;</div><div class="line">&#125;</div><div class="line"></div><div class="line">http &#123;</div><div class="line">    server &#123;</div><div class="line">    listen 80;              #监听端口</div><div class="line">        </div><div class="line">    error_log /home/7byte/openresty-test/logs/error.log info;</div><div class="line">    access_log /home/7byte/openresty-test/logs/access.log;</div><div class="line"></div><div class="line">    location / &#123;</div><div class="line">            default_type text/html;</div><div class="line">            content_by_lua_block &#123;</div><div class="line">                ngx.say(&quot;Hello, world!&quot;)</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>为了能够使用service对openresty-test执行start、stop、reload等操作，我们还需要在 /etc/init.d/ 目录下创建一个启动脚本openresty-test，内容参考默认的 /etc/init.d/openresty<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div></pre></td><td class="code"><pre><div class="line">#!/bin/sh</div><div class="line">#</div><div class="line"># openresty - this script starts and stops the nginx daemon of OpenResty</div><div class="line">#</div><div class="line"># chkconfig:   - 85 15</div><div class="line"># description: OpenResty is a scalable web platform by extending</div><div class="line">#              NGINX with Lua</div><div class="line"># processname: openresty</div><div class="line"># config:      /usr/local/openresty/nginx/conf/nginx.conf</div><div class="line"># config:      /etc/sysconfig/openresty</div><div class="line"># pidfile:     /usr/local/openresty/nginx/logs/nginx.pid</div><div class="line"></div><div class="line"># Source function library.</div><div class="line">. /etc/rc.d/init.d/functions</div><div class="line"></div><div class="line"># Source networking configuration.</div><div class="line">. /etc/sysconfig/network</div><div class="line"></div><div class="line"># Check that networking is up.</div><div class="line">[ &quot;$NETWORKING&quot; = &quot;no&quot; ] &amp;&amp; exit 0</div><div class="line"></div><div class="line">nginx=&quot;/usr/local/openresty/nginx/sbin/nginx&quot;</div><div class="line">prog=$(basename $nginx)</div><div class="line">pidfile=/home/7byte/openresty-test/logs/nginx.pid</div><div class="line"></div><div class="line">NGINX_CONF_FILE=&quot;/home/7byte/openresty-test/conf/nginx.conf&quot;</div><div class="line"></div><div class="line">[ -f /etc/sysconfig/openresty ] &amp;&amp; . /etc/sysconfig/openresty</div><div class="line"></div><div class="line">lockfile=/var/lock/subsys/openresty</div><div class="line"></div><div class="line">start() &#123;</div><div class="line">    [ -x $nginx ] || exit 5</div><div class="line">    [ -f $NGINX_CONF_FILE ] || exit 6</div><div class="line">    echo -n $&quot;Starting $prog: &quot;</div><div class="line">    daemon $nginx -c $NGINX_CONF_FILE</div><div class="line">    retval=$?</div><div class="line">    echo</div><div class="line">    [ $retval -eq 0 ] &amp;&amp; touch $lockfile</div><div class="line">    return $retval</div><div class="line">&#125;</div><div class="line"></div><div class="line">stop() &#123;</div><div class="line">    echo -n $&quot;Stopping $prog: &quot;</div><div class="line">    killproc $prog -QUIT</div><div class="line">    retval=$?</div><div class="line">    echo</div><div class="line">    [ $retval -eq 0 ] &amp;&amp; rm -f $lockfile</div><div class="line">    return $retval</div><div class="line">&#125;</div><div class="line"></div><div class="line">restart() &#123;</div><div class="line">    configtest || return $?</div><div class="line">    stop</div><div class="line">    sleep 1</div><div class="line">    start</div><div class="line">&#125;</div><div class="line"></div><div class="line">reload() &#123;</div><div class="line">    configtest || return $?</div><div class="line">    echo -n $&quot;Reloading $prog: &quot;</div><div class="line">    killproc $nginx -HUP</div><div class="line">    RETVAL=$?</div><div class="line">    echo</div><div class="line">&#125;</div><div class="line"></div><div class="line">force_reload() &#123;</div><div class="line">    restart</div><div class="line">&#125;</div><div class="line"></div><div class="line">configtest() &#123;</div><div class="line">    $nginx -q -t -c $NGINX_CONF_FILE</div><div class="line">&#125;</div><div class="line"></div><div class="line">rh_status() &#123;</div><div class="line">    status $nginx</div><div class="line">&#125;</div><div class="line"></div><div class="line">rh_status_q() &#123;</div><div class="line">    rh_status &gt;/dev/null 2&gt;&amp;1</div><div class="line">&#125;</div><div class="line"></div><div class="line">case &quot;$1&quot; in</div><div class="line">    start)</div><div class="line">        rh_status_q &amp;&amp; exit 0</div><div class="line">        $1</div><div class="line">        ;;</div><div class="line">    stop)</div><div class="line">        rh_status_q || exit 0</div><div class="line">        $1</div><div class="line">        ;;</div><div class="line">    restart|configtest)</div><div class="line">        $1</div><div class="line">        ;;</div><div class="line">    reload)</div><div class="line">        rh_status_q || exit 7</div><div class="line">        $1</div><div class="line">        ;;</div><div class="line">    force-reload)</div><div class="line">        force_reload</div><div class="line">        ;;</div><div class="line">    status)</div><div class="line">        rh_status</div><div class="line">        ;;</div><div class="line">    condrestart|try-restart)</div><div class="line">        rh_status_q || exit 0</div><div class="line">        ;;</div><div class="line">    *)</div><div class="line">        echo $&quot;Usage: $0 &#123;start|stop|status|restart|condrestart|try-restart|reload|force-reload|configtest&#125;&quot;</div><div class="line">        exit 2</div><div class="line">esac</div></pre></td></tr></table></figure></p>
+<p>保存退出后，下一步启动openresty-test。需要注意的是，如果开启了防火墙，需要放开nginx默认监听的80端口，或是其它自定义的端口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ sudo service openresty-test start</div><div class="line">Starting openresty-test (via systemctl):                   [  OK  ]</div></pre></td></tr></table></figure></p>
+<p>看到上面的结果，说明启动成功了。然后通过curl在试着访问一下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ curl http://127.0.0.1</div><div class="line">Hello, world!</div></pre></td></tr></table></figure></p>
+<p>访问 <a href="http://127.0.0.1" target="_blank" rel="external">http://127.0.0.1</a> 返回了“Hello, world!”，搭建完成。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;测试机配置&quot;&gt;&lt;a href=&quot;#测试机配置&quot; class=&quot;headerlink&quot; title=&quot;测试机配置&quot;&gt;&lt;/a&gt;测试机配置&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;CPU： 1核 Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz &lt;/
+    
+    </summary>
+    
+      <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
+    
+      <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>基于hexo搭建github个人博客</title>
+    <link href="http://7byte.github.io/2016/07/22/%E5%9F%BA%E4%BA%8Ehexo%E6%90%AD%E5%BB%BAgithub%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/"/>
+    <id>http://7byte.github.io/2016/07/22/基于hexo搭建github个人博客/</id>
+    <published>2016-07-22T02:38:04.000Z</published>
+    <updated>2016-11-20T10:59:54.519Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="为什么要写个人博客"><a href="#为什么要写个人博客" class="headerlink" title="为什么要写个人博客"></a>为什么要写个人博客</h2><blockquote>
+<p>“好记性不如烂笔头”</p>
+</blockquote>
+<p>一直倔强地认为只要我记性足够好，就根本不需要把时间花在做笔记、总结这种多余的事情上面。然而事实证明，我的这个想法的确没错，问题出就出在我的记性还不够好，至少还没好到完全不用做笔记的地步。当我意识到这点的时候，结合自身程序员的身份，很自然地萌生了“创建一个只属于自己的个人博客”的想法，于是有了现在你看到的这篇文章。</p>
+<h2 id="配置Hexo"><a href="#配置Hexo" class="headerlink" title="配置Hexo"></a>配置Hexo</h2><blockquote>
+<p><a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>是一个快速、简洁且高效的博客框架。Hexo 使用 Markdown（或其他渲染引擎）解析文章，在几秒内，即可利用靓丽的主题生成静态网页。</p>
+</blockquote>
+<ul>
+<li>下载安装<a href="https://nodejs.org/en/" target="_blank" rel="external">Node.js</a></li>
+<li><p>安装 Hexo</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm install -g hexo-cli</div></pre></td></tr></table></figure>
+<p>  不知道是不是网络原因，上面的命令我在家里自己电脑上卡了二十多分钟才执行完，不过从最终结果来看，并没有什么问题。</p>
+</li>
+<li><p>创建hexo工作目录<br>新建一个文件夹Hexo，进入文件夹后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm install</div></pre></td></tr></table></figure>
+</li>
+<li><p>启动本地预览</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo init</div></pre></td></tr></table></figure>
+<p>  我执行上面这条命令时在最后一步报了个警告：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm WARN deprecated minimatch@0.3.0: Please update to minimatch 3.0.2 or higher to avoid a RegExp DoS issue</div></pre></td></tr></table></figure>
+<p>  这时候<code>Ctrl+C</code>就可以了，这个警告不会对后续流程有什么影响，但本着追求完美的态度，我们执行下面的命令更新这个有问题的包</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm install minimatch@&quot;3.0.2&quot;</div></pre></td></tr></table></figure>
+</li>
+<li><p>然后生成静态文件并启动服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ hexo g</div><div class="line">$ hexo s</div></pre></td></tr></table></figure>
+<p>  启动服务后的默认访问网址为： <a href="http://localhost:4000/" target="_blank" rel="external">http://localhost:4000/</a><br>如果以上各步都没问题，就能在浏览器看到新建的网页了，这里看到的是默认主题，将来根据自己的需要修改，参考官方<a href="https://hexo.io/themes/" target="_blank" rel="external">主题</a></p>
+</li>
+</ul>
+<h2 id="部署到github"><a href="#部署到github" class="headerlink" title="部署到github"></a>部署到github</h2><ul>
+<li><p>安装hexo git部署插件 <a href="https://github.com/hexojs/hexo-deployer-git" target="_blank" rel="external">hexo-deployer-git</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm install hexo-deployer-git --save</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改hexo配置<br>工作目录中的 _config.yml 在这个文件里面可以设置网站的各项配置信息，包括网站标题、作者名等等。这里我们修改deploy参数为github仓库路径。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">deploy: </div><div class="line">  type: git</div><div class="line">  repo: https://github.com/7byte/7byte.github.com.git</div></pre></td></tr></table></figure>
+</li>
+<li><p>部署github</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
+<p>  第一次部署的时候需要输入github账号和密码，以后再部署不用重新输入。<br>  执行上面的命令后会把 \public 目录下的文件全部同步到指定的github pages仓库，仓库中原来的<strong>所有文件都会被清空</strong>，然后替换成我们新提交的文件。</p>
+<p>  部署完成之后，在浏览器输入<a href="http://yourname.github.com" target="_blank" rel="external">http://yourname.github.com</a> 或者 <a href="http://yourname.github.io" target="_blank" rel="external">http://yourname.github.io</a> 就能看到新的博客页面，和本地预览时看到的内容是一致的。</p>
+</li>
+</ul>
+<h2 id="The-End"><a href="#The-End" class="headerlink" title="The End"></a>The End</h2><p>至此，我的博客基本搭建完成了！<br>当然，这只是开始，搭建博客的目的是为了敦促自己多多总结、多多表达、多多分享，改掉身上那些臭毛病，从而成为一个更好的人。仔细想想，我发现可以写的东西还挺多的。项目中用到的新思路、解决一道棘手的难题、学到好玩的新知识、自己实现的小游戏等等。<br>骐骥一跃，不能十步，驽马十驾，功在不舍，与君共勉。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;为什么要写个人博客&quot;&gt;&lt;a href=&quot;#为什么要写个人博客&quot; class=&quot;headerlink&quot; title=&quot;为什么要写个人博客&quot;&gt;&lt;/a&gt;为什么要写个人博客&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;“好记性不如烂笔头”&lt;/p&gt;
+&lt;/blockquote&gt;
+
+    
+    </summary>
+    
+      <category term="搭建个人博客" scheme="http://7byte.github.io/categories/myBlog/"/>
+    
+    
+      <category term="github" scheme="http://7byte.github.io/tags/github/"/>
+    
+      <category term="hexo" scheme="http://7byte.github.io/tags/hexo/"/>
+    
+  </entry>
+  
+</feed>
