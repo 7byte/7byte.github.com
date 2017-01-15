@@ -92,7 +92,7 @@
     <link href="http://7byte.github.io/2016/11/14/trytouse-golang/"/>
     <id>http://7byte.github.io/2016/11/14/trytouse-golang/</id>
     <published>2016-11-14T06:33:04.000Z</published>
-    <updated>2017-01-13T16:39:36.667Z</updated>
+    <updated>2017-01-15T14:58:52.707Z</updated>
     
     <content type="html"><![CDATA[<p>最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。<br>本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（<a href="https://golang.org/doc/install" target="_blank" rel="external">安装golang</a>），以及安装包下载页面（<a href="https://golang.org/dl/" target="_blank" rel="external">下载安装包</a>）。<br>本人目前还买不起Mac，故无法验证Mac上安装流程的可行性，等将来剁手了再来补充相关内容。</p>
 <p><strong><em>温馨提示：部分步骤可能需要科学上网。</em></strong></p>
@@ -103,18 +103,18 @@
 <li><p>提取压缩包内容到 /usr/local 目录：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo tar -C /usr/local -xzf go1.7.3.linux-amd64.tar.gz</div></pre></td></tr></table></figure>
 </li>
-<li><p>将 /usr/local/go/bin 添加到PATH环境变量，将此行添加到你的 /etc/profile（全系统安装）或 $HOME/.profile 文件中：</p>
+<li><p>将 /usr/local/go/bin 添加到PATH环境变量，将此行添加到你的 /etc/profile（全系统安装）或 $HOME/.bash_profile 文件中：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">export PATH=$PATH:/usr/local/go/bin</div></pre></td></tr></table></figure>
 <p>然后让新添加的配置生效：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ source /etc/profile</div></pre></td></tr></table></figure>
 </li>
-<li><p>添加自己的工作目录，将此行添加到 $HOME/.profile 文件中：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">export GOPATH=$HOME/gowork</div></pre></td></tr></table></figure>
+<li><p>添加自己的工作目录，将此行添加到 $HOME/.bash_profile 文件中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">GOPATH=/home/7byte/code/gowork</div><div class="line">GOBIN=$GOPATH/bin</div><div class="line">PATH=$PATH:$GOBIN</div><div class="line"></div><div class="line">export GOPATH</div><div class="line">export GOBIN</div><div class="line">export PATH</div></pre></td></tr></table></figure>
 <p>同样的让新添加的配置生效，gowork目录如果不存在则创建：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ mkdir $HOME/gowork</div><div class="line">$ source $HOME/.profile</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ mkdir $HOME/gowork</div><div class="line">$ source $HOME/.bash_profile</div></pre></td></tr></table></figure>
 </li>
 <li><p>验证安装。使用<code>go env</code>命令查看golang环境：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">$ go env</div><div class="line">GOARCH=&quot;amd64&quot;</div><div class="line">GOBIN=&quot;&quot;</div><div class="line">GOEXE=&quot;&quot;</div><div class="line">GOHOSTARCH=&quot;amd64&quot;</div><div class="line">GOHOSTOS=&quot;linux&quot;</div><div class="line">GOOS=&quot;linux&quot;</div><div class="line">GOPATH=&quot;/home/7byte/gowork&quot;</div><div class="line">GORACE=&quot;&quot;</div><div class="line">GOROOT=&quot;/usr/lib/golang&quot;</div><div class="line">GOTOOLDIR=&quot;/usr/lib/golang/pkg/tool/linux_amd64&quot;</div><div class="line">GO15VENDOREXPERIMENT=&quot;1&quot;</div><div class="line">CC=&quot;gcc&quot;</div><div class="line">GOGCCFLAGS=&quot;-fPIC -m64 -pthread -fmessage-length=0&quot;</div><div class="line">CXX=&quot;g++&quot;</div><div class="line">CGO_ENABLED=&quot;1&quot;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">$ go env</div><div class="line">GOARCH=&quot;amd64&quot;</div><div class="line">GOBIN=&quot;/home/7byte/code/gowork/bin&quot;</div><div class="line">GOEXE=&quot;&quot;</div><div class="line">GOHOSTARCH=&quot;amd64&quot;</div><div class="line">GOHOSTOS=&quot;linux&quot;</div><div class="line">GOOS=&quot;linux&quot;</div><div class="line">GOPATH=&quot;/home/7byte/code/gowork&quot;</div><div class="line">GORACE=&quot;&quot;</div><div class="line">GOROOT=&quot;/usr/lib/golang&quot;</div><div class="line">GOTOOLDIR=&quot;/usr/lib/golang/pkg/tool/linux_amd64&quot;</div><div class="line">GO15VENDOREXPERIMENT=&quot;1&quot;</div><div class="line">CC=&quot;gcc&quot;</div><div class="line">GOGCCFLAGS=&quot;-fPIC -m64 -pthread -fmessage-length=0&quot;</div><div class="line">CXX=&quot;g++&quot;</div><div class="line">CGO_ENABLED=&quot;1&quot;</div></pre></td></tr></table></figure>
 <p>在 $GOPATH/src/ 创建 hello 目录，新建 helloworld.go 文件并输入以下代码：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">    fmt.Printf(<span class="string">"hello, world\n"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>运行我们的hello程序，如果得到以下输出说明配置成功。</p>
@@ -194,9 +194,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
@@ -288,9 +288,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
       <category term="性能测试" scheme="http://7byte.github.io/tags/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
     
@@ -336,9 +336,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
