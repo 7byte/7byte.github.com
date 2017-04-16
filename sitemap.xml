@@ -2,9 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://7byte.github.io/about/index.html</loc>
+    
+    <lastmod>2017-04-16T15:33:21.063Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://7byte.github.io/2017/04/16/binary-search-tree/</loc>
     
-    <lastmod>2017-04-16T15:03:48.409Z</lastmod>
+    <lastmod>2017-04-16T15:06:15.961Z</lastmod>
     
   </url>
   
@@ -66,13 +73,6 @@
   
   <url>
     <loc>http://7byte.github.io/baidu_verify_Wh3fA3kQB5.html</loc>
-    
-    <lastmod>2016-11-20T10:59:54.519Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://7byte.github.io/about/index.html</loc>
     
     <lastmod>2016-11-20T10:59:54.519Z</lastmod>
     

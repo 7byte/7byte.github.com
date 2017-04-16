@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://7byte.github.io/"/>
-  <updated>2017-04-16T15:03:48.409Z</updated>
+  <updated>2017-04-16T15:06:15.961Z</updated>
   <id>http://7byte.github.io/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://7byte.github.io/2017/04/16/binary-search-tree/"/>
     <id>http://7byte.github.io/2017/04/16/binary-search-tree/</id>
     <published>2017-04-16T03:30:27.000Z</published>
-    <updated>2017-04-16T15:03:48.409Z</updated>
+    <updated>2017-04-16T15:06:15.961Z</updated>
     
     <content type="html"><![CDATA[<h2 id="二叉查找树定义"><a href="#二叉查找树定义" class="headerlink" title="二叉查找树定义"></a>二叉查找树定义</h2><blockquote>
 <p><a href="https://zh.wikipedia.org/zh-cn/%E4%BA%8C%E5%85%83%E6%90%9C%E5%B0%8B%E6%A8%B9" target="_blank" rel="external"><strong>二叉查找树</strong></a>（英语：<em>Binary Search Tree</em>），也称二叉搜索树、有序二叉树（英语：ordered binary tree），排序二叉树（英语：sorted binary tree），是指一棵空树或者具有下列性质的<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E5%8F%89%E6%A0%91" target="_blank" rel="external">二叉树</a>：</p>
@@ -299,9 +299,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
@@ -393,9 +393,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
       <category term="性能测试" scheme="http://7byte.github.io/tags/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
     
@@ -441,9 +441,9 @@
       <category term="openresty" scheme="http://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="http://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="http://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
