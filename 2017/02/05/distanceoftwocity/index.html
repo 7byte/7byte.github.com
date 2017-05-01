@@ -231,6 +231,10 @@ city.go1234567891011121314151617181920212223242526272829303132333435363738394041
 			
 		
 			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
 				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
 			
 		
@@ -240,10 +244,6 @@ city.go1234567891011121314151617181920212223242526272829303132333435363738394041
 		
 			
 				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
 			
 		
 			
@@ -264,13 +264,7 @@ city.go1234567891011121314151617181920212223242526272829303132333435363738394041
         
           <li>
             
-            	<a href="http://7bytes.xyz/ss-panel-2/" target="_blank" title="shadowsocks">shadowsocks</a>
-            
-          </li>
-        
-          <li>
-            
-            	<a href="https://github.com/7byte" target="_blank" title="github">github</a>
+            	<a href="https://github.com/7byte" target="_blank" title="Github of 7byte">Github of 7byte</a>
             
           </li>
         
@@ -356,6 +350,9 @@ $(document).ready(function(){
   $(window).scroll(function(){
     o.css("top",Math.max(80,260-$(this).scrollTop()));
   });
+  // 
+  
+    c.click();
   
   $(window).resize(function(){
     getSize(); 
@@ -393,6 +390,7 @@ $(document).ready(function(){
   o.click(function(){
     ta.css('display', 'none');
   });
+  c.click();
   $(window).scroll(function(){
     ta.css("top",Math.max(140,320-$(this).scrollTop()));
   });

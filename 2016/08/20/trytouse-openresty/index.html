@@ -259,6 +259,10 @@ OpenResty ™ 是一个基于 Nginx 与 Lua 的高性能 Web 平台，其内部�
 			
 		
 			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
 				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
 			
 		
@@ -268,10 +272,6 @@ OpenResty ™ 是一个基于 Nginx 与 Lua 的高性能 Web 平台，其内部�
 		
 			
 				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
 			
 		
 			
@@ -292,13 +292,7 @@ OpenResty ™ 是一个基于 Nginx 与 Lua 的高性能 Web 平台，其内部�
         
           <li>
             
-            	<a href="http://7bytes.xyz/ss-panel-2/" target="_blank" title="shadowsocks">shadowsocks</a>
-            
-          </li>
-        
-          <li>
-            
-            	<a href="https://github.com/7byte" target="_blank" title="github">github</a>
+            	<a href="https://github.com/7byte" target="_blank" title="Github of 7byte">Github of 7byte</a>
             
           </li>
         
@@ -384,6 +378,9 @@ $(document).ready(function(){
   $(window).scroll(function(){
     o.css("top",Math.max(80,260-$(this).scrollTop()));
   });
+  // 
+  
+    c.click();
   
   $(window).resize(function(){
     getSize(); 
@@ -421,6 +418,7 @@ $(document).ready(function(){
   o.click(function(){
     ta.css('display', 'none');
   });
+  c.click();
   $(window).scroll(function(){
     ta.css("top",Math.max(140,320-$(this).scrollTop()));
   });
