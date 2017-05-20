@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://7byte.github.io/"/>
-  <updated>2017-04-16T15:06:15.961Z</updated>
+  <updated>2017-05-20T16:59:13.295Z</updated>
   <id>https://7byte.github.io/</id>
   
   <author>
@@ -14,6 +14,59 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>golang包初始化</title>
+    <link href="https://7byte.github.io/2017/05/20/golangPackageInit/"/>
+    <id>https://7byte.github.io/2017/05/20/golangPackageInit/</id>
+    <published>2017-05-20T09:16:27.000Z</published>
+    <updated>2017-05-20T16:59:13.295Z</updated>
+    
+    <content type="html"><![CDATA[<p>相比于C/C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用<code>public</code>和<code>private</code>这样的关键字。</p>
+<p>另外还有一个被大量使用的特性：init函数机制。</p>
+<ul>
+<li>每个包的go文件都能包含任意数量的init函数；</li>
+<li>init函数不能被用户调用或引用；</li>
+<li>多个init函数在程序启动时按照声明的顺序（执行main函数之前）自动调用。</li>
+</ul>
+<div align="center"><img src="/images/golang_init.png" alt="golang初始化顺序"></div>
+
+<p>（图片来自beego官方文档：<a href="https://beego.me/docs/quickstart/router.md" target="_blank" rel="external">https://beego.me/docs/quickstart/router.md</a> ）</p>
+<h3 id="包内的初始化顺序"><a href="#包内的初始化顺序" class="headerlink" title="包内的初始化顺序"></a>包内的初始化顺序</h3><ol>
+<li><code>const</code>常量首先被初始化。</li>
+<li>接着是包内的全局变量，初始化的顺序为变量的声明的顺序。但是当变量之间存在依赖关系时，优先初始化被依赖的变量。</li>
+<li>最后执行init函数。</li>
+</ol>
+<p>当包内有多个go源文件时，<code>go tool</code>按照文件名排序后依次送入编译器初始化。</p>
+<h3 id="依赖包的初始化"><a href="#依赖包的初始化" class="headerlink" title="依赖包的初始化"></a>依赖包的初始化</h3><p>在初始化一个包之前，必须完全初始化它所依赖的包。例如上图中的pkg1引入了pkg2，那么在初始化pkg1之前必须先初始化pkg2，而pkg2引入了pkg3，所以在初始化pkg2之前需要先初始化pkg3，pkg3没有引入任何包，所以直接执行包内初始化。由上图也可以发现，main总是最后一个被初始化的包。</p>
+<p>另外还有一个很重要的特性：每个包只会初始化一次。例如，即使<code>fmt</code>被多个包引入，也只会在第一次时被初始化。</p>
+<p>用下面的测试代码来验证一下以上特性。</p>
+<p><code>testInit/pkg2/pkg2.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> pkg2</div><div class="line"></div><div class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></div><div class="line"></div><div class="line"><span class="keyword">var</span> (</div><div class="line">    X = <span class="number">10</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">    X++</div><div class="line">    fmt.Printf(<span class="string">"x init to %d in pkg2\n"</span>, X)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>pkg2声明了一个可导出的变量<code>X</code>，初始值是10。init函数将<code>X</code>的值加<code>1</code>，并打印出<code>X</code>当前的值。</p>
+<p><code>testInit/pkg1/pkg1.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> pkg1</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">    <span class="string">"fmt"</span></div><div class="line">    <span class="string">"testInit/pkg2"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">    pkg2.X += <span class="number">2</span></div><div class="line">    fmt.Printf(<span class="string">"x init to %d in pkg1\n"</span>, pkg2.X)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintX</span><span class="params">()</span></span> &#123;</div><div class="line">    fmt.Printf(<span class="string">"x = %d in pkg1\n"</span>, pkg2.X)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>pkg1引入了pkg2，并且在inti函数中将<code>X</code>的值加2，然后打印出<code>X</code>当前的值。</p>
+<p><code>testInit/main.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">    <span class="string">"fmt"</span></div><div class="line">    <span class="string">"testInit/pkg1"</span></div><div class="line">    <span class="string">"testInit/pkg2"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">    pkg2.X += <span class="number">3</span></div><div class="line">    fmt.Printf(<span class="string">"x init to %d in main\n"</span>, pkg2.X)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">    fmt.Printf(<span class="string">"x = %d in main\n"</span>, pkg2.X)</div><div class="line">    pkg1.PrintX()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>main同时引入了pkg1和pkg2，并且在inti函数中将<code>X</code>的值加3，然后打印出<code>X</code>当前的值。</p>
+<p>输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[ `go run main.go` | done: 541.4397ms ]</div><div class="line">  x init to 11 in pkg2</div><div class="line">  x init to 13 in pkg1</div><div class="line">  x init to 16 in main</div><div class="line">  x = 16 in main</div><div class="line">  x = 16 in pkg1</div></pre></td></tr></table></figure>
+<p>不考虑<code>fmt</code>包，以上代码中有两条引用关系<code>main-&gt;pkg1-&gt;pkg2</code>和<code>main-&gt;pkg2</code>，但是从输出结果可以看到，pkg2只被初始化了一次，符合我们的预期。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;相比于C/C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用&lt;code&gt;public&lt;/
+    
+    </summary>
+    
+      <category term="golang" scheme="https://7byte.github.io/categories/golang/"/>
+    
+    
+      <category term="golang" scheme="https://7byte.github.io/tags/golang/"/>
+    
+  </entry>
   
   <entry>
     <title>二叉查找树（BST）</title>
@@ -299,9 +352,9 @@
       <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
@@ -393,9 +446,9 @@
       <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
     
       <category term="性能测试" scheme="https://7byte.github.io/tags/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"/>
     
@@ -441,9 +494,9 @@
       <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
     
     
-      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
-    
       <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
+    
+      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
     
   </entry>
   
