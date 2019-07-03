@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://7byte.github.io/"/>
-  <updated>2017-07-31T17:18:45.169Z</updated>
+  <updated>2019-07-03T15:43:30.993Z</updated>
   <id>https://7byte.github.io/</id>
   
   <author>
@@ -16,11 +16,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>protobuf编码（翻译）</title>
-    <link href="https://7byte.github.io/2017/07/09/protobuf-encoding/"/>
-    <id>https://7byte.github.io/2017/07/09/protobuf-encoding/</id>
-    <published>2017-07-09T04:21:27.000Z</published>
-    <updated>2017-07-31T17:18:45.169Z</updated>
+    <title>protobuf编码</title>
+    <link href="https://7byte.github.io/2019/05/09/protobuf-encoding/"/>
+    <id>https://7byte.github.io/2019/05/09/protobuf-encoding/</id>
+    <published>2019-05-09T04:21:27.000Z</published>
+    <updated>2019-07-03T15:43:30.993Z</updated>
     
     <content type="html"><![CDATA[<blockquote>
 <p>英文原文：<a href="https://developers.google.com/protocol-buffers/docs/encoding" target="_blank" rel="external">https://developers.google.com/protocol-buffers/docs/encoding</a></p>
@@ -176,11 +176,62 @@
   </entry>
   
   <entry>
+    <title>轻量级在线游戏服务器框架skynet</title>
+    <link href="https://7byte.github.io/2019/04/16/introduce2skynet/"/>
+    <id>https://7byte.github.io/2019/04/16/introduce2skynet/</id>
+    <published>2019-04-16T03:30:27.000Z</published>
+    <updated>2019-07-03T15:44:33.726Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="skynet是什么"><a href="#skynet是什么" class="headerlink" title="skynet是什么"></a>skynet是什么</h2><p><img src="http://ou1s4jkow.bkt.clouddn.com/skynet.png" alt=""></p>
+<p>按照作者的说法，<a href="https://github.com/cloudwu/skynet/wiki" title="skynet官方wiki" target="_blank" rel="external"><em>skynet是一个轻量级的为在线游戏服务器打造的框架</em> </a>。 </p>
+<h2 id="skynet可以做什么"><a href="#skynet可以做什么" class="headerlink" title="skynet可以做什么"></a>skynet可以做什么</h2><h2 id="skynet怎么用"><a href="#skynet怎么用" class="headerlink" title="skynet怎么用"></a>skynet怎么用</h2><h3 id="常用Lua-API"><a href="#常用Lua-API" class="headerlink" title="常用Lua API"></a>常用Lua API</h3><ul>
+<li><strong>skynet.newservice(name, …)</strong> 启动一个名为 name 的新服务</li>
+<li><strong>skynet.start(func)</strong> 用 func 函数初始化服务，并将消息处理函数注册到 C 层，让该服务可以工作</li>
+<li><strong>skynet.dispatch(type, func)</strong> 为 type 类型的消息设定一个处理函数。</li>
+<li><strong>skynet.fork(func, …)</strong> 启动一个新的任务去执行函数 func </li>
+<li><strong>skynet.call(addr, type, …)</strong> 用 type 类型发送一个消息到 addr ，并等待对方的回应</li>
+<li><strong>skynet.send(addr, type, …)</strong> 用 type 类型向 addr 发送一个消息</li>
+</ul>
+<h3 id="目录结构"><a href="#目录结构" class="headerlink" title="目录结构"></a>目录结构</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">.</div><div class="line">├── bin</div><div class="line">│   └── skynet</div><div class="line">├── conf</div><div class="line">│   └── config.example</div><div class="line">├── lib</div><div class="line">│   ├── cservice</div><div class="line">│   ├── luaclib</div><div class="line">│   ├── lualib</div><div class="line">│   └── service</div><div class="line">├── script</div><div class="line">└── src</div><div class="line">    └── main.lua</div></pre></td></tr></table></figure>
+<h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><p>启动 skynet 服务需要提供一个配置文件，以下是一个简单的配置文件示例：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">root = <span class="string">"./"</span></div><div class="line">thread = <span class="number">8</span></div><div class="line">harbor = <span class="number">0</span></div><div class="line">start = <span class="string">"main"</span>	<span class="comment">-- main script</span></div><div class="line">luaservice = root .. <span class="string">"src/?.lua;"</span> .. root .. <span class="string">"lib/service/?.lua"</span></div><div class="line">lualoader = root .. <span class="string">"lib/lualib/loader.lua"</span></div><div class="line">lua_path = root .. <span class="string">"lib/lualib/?.lua;"</span> .. root .. <span class="string">"lib/lualib/?/init.lua;"</span></div><div class="line">lua_cpath = root .. <span class="string">"lib/luaclib/?.so;"</span></div><div class="line">cpath = root .. <span class="string">"lib/cservice/?.so"</span></div></pre></td></tr></table></figure>
+<ul>
+<li><strong>root</strong> 项目根目录</li>
+<li><strong>thread</strong> 启动多少个工作线程。通常不要将它配置超过你实际拥有的 CPU 核心数</li>
+<li><strong>bootstrap</strong> skynet 启动的第一个服务以及其启动参数。默认配置为<code>snlua bootstrap</code>，即启动一个名为 bootstrap 的 lua 服务。通常指的是 service/bootstrap.lua 这段代码</li>
+<li><strong>harbor</strong> 可以是 1-255 间的任意整数。一个 skynet 网络最多支持 255 个节点。每个节点有必须有一个唯一的编号。harbor 为 0 时skynet 工作在单节点模式下</li>
+<li><strong>start</strong> 这是 bootstrap 最后一个环节将启动的 lua 服务，也就是你定制的 skynet 节点的主程序。默认为 main ，即启动 main.lua 这个脚本。这个 lua 服务的路径由下面的 <strong>luaservice</strong> 指定</li>
+<li><strong>lualoader</strong> 用哪一段 lua 代码加载 lua 服务。通常配置为 lualib/loader.lua ，再由这段代码解析服务名称，进一步加载 lua 代码。snlua 会将下面几个配置项取出，放在初始化好的 lua 虚拟机的全局变量中。具体可参考实现</li>
+<li><strong>luaservice</strong> lua 服务代码所在的位置。可以配置多项，以 ; 分割。 如果在创建 lua 服务时，以一个目录而不是单个文件提供，最终找到的路径还会被添加到 package.path 中。比如，在编写 lua 服务时，有时候会希望把该服务用到的库也放到同一个目录下</li>
+<li><strong>lua_path</strong> 将添加到 package.path 中的路径，供 require 调用</li>
+<li><strong>lua_cpath</strong> 将添加到 package.cpath 中的路径，供 require 调用</li>
+</ul>
+<ul>
+<li><strong>cpath</strong> 用 C 编写的服务模块的位置，通常指 cservice 下那些 .so 文件。如果你的系统的动态库不是以 .so 为后缀，需要做相应的修改</li>
+</ul>
+<h3 id="启动skynet节点"><a href="#启动skynet节点" class="headerlink" title="启动skynet节点"></a>启动skynet节点</h3><p><code>main.lua</code></p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">local</span> skynet = <span class="built_in">require</span> <span class="string">"skynet"</span></div><div class="line"></div><div class="line">skynet.start(<span class="function"><span class="keyword">function</span><span class="params">()</span></span></div><div class="line">true<span class="built_in">print</span>(<span class="string">"hello, skynet!"</span>)</div><div class="line">trueskynet.exit()</div><div class="line"><span class="keyword">end</span>)</div></pre></td></tr></table></figure>
+<p>使用skynet启动一个节点：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">$ ./bin/skynet ./conf/config.example</div><div class="line">[:00000001] LAUNCH logger </div><div class="line">[:00000002] LAUNCH snlua bootstrap</div><div class="line">[:00000003] LAUNCH snlua launcher</div><div class="line">[:00000004] LAUNCH snlua cdummy</div><div class="line">[:00000005] LAUNCH harbor 0 4</div><div class="line">[:00000006] LAUNCH snlua datacenterd</div><div class="line">[:00000007] LAUNCH snlua service_mgr</div><div class="line">[:00000008] LAUNCH snlua main</div><div class="line">hello, skynet!</div><div class="line">[:00000008] KILL self</div><div class="line">[:00000002] KILL self</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;skynet是什么&quot;&gt;&lt;a href=&quot;#skynet是什么&quot; class=&quot;headerlink&quot; title=&quot;skynet是什么&quot;&gt;&lt;/a&gt;skynet是什么&lt;/h2&gt;&lt;p&gt;&lt;img src=&quot;http://ou1s4jkow.bkt.clouddn.com
+    
+    </summary>
+    
+      <category term="算法" scheme="https://7byte.github.io/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+  </entry>
+  
+  <entry>
     <title>golang包初始化</title>
-    <link href="https://7byte.github.io/2017/05/20/golangPackageInit/"/>
-    <id>https://7byte.github.io/2017/05/20/golangPackageInit/</id>
-    <published>2017-05-20T09:16:27.000Z</published>
-    <updated>2017-05-20T16:59:13.295Z</updated>
+    <link href="https://7byte.github.io/2018/05/20/golangPackageInit/"/>
+    <id>https://7byte.github.io/2018/05/20/golangPackageInit/</id>
+    <published>2018-05-20T09:16:27.000Z</published>
+    <updated>2019-07-03T15:45:09.510Z</updated>
     
     <content type="html"><![CDATA[<p>相比于C/C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用<code>public</code>和<code>private</code>这样的关键字。</p>
 <p>另外还有一个被大量使用的特性：init函数机制。</p>
@@ -230,10 +281,10 @@
   
   <entry>
     <title>二叉查找树（BST）</title>
-    <link href="https://7byte.github.io/2017/04/16/binary-search-tree/"/>
-    <id>https://7byte.github.io/2017/04/16/binary-search-tree/</id>
-    <published>2017-04-16T03:30:27.000Z</published>
-    <updated>2017-04-16T15:06:15.961Z</updated>
+    <link href="https://7byte.github.io/2018/04/16/binary-search-tree/"/>
+    <id>https://7byte.github.io/2018/04/16/binary-search-tree/</id>
+    <published>2018-04-16T03:30:27.000Z</published>
+    <updated>2019-07-03T15:44:40.745Z</updated>
     
     <content type="html"><![CDATA[<h2 id="二叉查找树定义"><a href="#二叉查找树定义" class="headerlink" title="二叉查找树定义"></a>二叉查找树定义</h2><blockquote>
 <p><a href="https://zh.wikipedia.org/zh-cn/%E4%BA%8C%E5%85%83%E6%90%9C%E5%B0%8B%E6%A8%B9" target="_blank" rel="external"><strong>二叉查找树</strong></a>（英语：<em>Binary Search Tree</em>），也称二叉搜索树、有序二叉树（英语：ordered binary tree），排序二叉树（英语：sorted binary tree），是指一棵空树或者具有下列性质的<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E5%8F%89%E6%A0%91" target="_blank" rel="external">二叉树</a>：</p>
@@ -304,11 +355,39 @@
   </entry>
   
   <entry>
+    <title>openresty中连接池的应用</title>
+    <link href="https://7byte.github.io/2018/03/05/trytouse-conn-pool/"/>
+    <id>https://7byte.github.io/2018/03/05/trytouse-conn-pool/</id>
+    <published>2018-03-05T07:16:27.000Z</published>
+    <updated>2019-07-03T15:45:23.461Z</updated>
+    
+    <content type="html"><![CDATA[<p>在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。<br>在 OpenResty 中，所有具备 set_keepalive 的类、库函数，说明他都是支持连接池的。这里举个mysql连接池的例子，其它类型的连接池比如redis连接池、线程池、内存池思路是一样的。</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">local</span> MYSQL = <span class="built_in">require</span>(<span class="string">"resty.mysql"</span>)</div><div class="line"><span class="keyword">local</span> JSON  = <span class="built_in">require</span>(<span class="string">"cjson"</span>)</div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql_server_ip                       =   <span class="string">"127.0.0.1"</span></div><div class="line"><span class="keyword">local</span> mysql_server_port                     =   <span class="number">3306</span></div><div class="line"><span class="keyword">local</span> mysql_databases                       =   <span class="string">"mysql"</span></div><div class="line"><span class="keyword">local</span> mysql_user_name                       =   <span class="string">"7byte"</span></div><div class="line"><span class="keyword">local</span> mysql_user_pass                       =   <span class="string">"abcdefg"</span></div><div class="line"><span class="keyword">local</span> mysql_max_packet_size                 =   <span class="number">1024</span> * <span class="number">1024</span></div><div class="line"></div><div class="line"><span class="comment">-- 获取mysql连接，mysql:connect先在连接池中查找是否有可用的连接，没有才创建一个新连接</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">getMysql</span><span class="params">()</span></span></div><div class="line">    <span class="keyword">local</span> mysql = MYSQL:new()</div><div class="line">    mysql:set_timeout(<span class="number">1000</span>)</div><div class="line">    <span class="keyword">local</span> ok, err, errno, sqlstate = mysql:connect&#123;</div><div class="line">        host = mysql_server_ip,</div><div class="line">        port = mysql_server_port,</div><div class="line">        database = mysql_databases,</div><div class="line">        user = mysql_user_name,</div><div class="line">        password = mysql_user_pass,</div><div class="line">        max_packet_size = mysql_max_packet_size,</div><div class="line">        charset=utf8 &#125;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">        <span class="keyword">return</span> <span class="keyword">nil</span>, err, errno, sqlstate</div><div class="line">    <span class="keyword">end</span></div><div class="line">    <span class="keyword">return</span> mysql,<span class="keyword">nil</span>,<span class="keyword">nil</span>,sqlstate</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="comment">-- 释放mysql连接，放入连接池</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">releaseConn</span><span class="params">(mysqlConn)</span></span></div><div class="line">    <span class="keyword">local</span> ok = <span class="keyword">true</span></div><div class="line">    <span class="keyword">local</span> db_type = <span class="number">0</span></div><div class="line">    <span class="keyword">local</span> err = <span class="string">""</span></div><div class="line">    <span class="keyword">if</span> mysqlConn <span class="keyword">then</span></div><div class="line">        <span class="keyword">local</span> res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">while</span> err == <span class="string">"again"</span> <span class="keyword">do</span></div><div class="line">            res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">end</span></div><div class="line">        <span class="comment">-- setkeepalive(maxidletimeout, poolsize)</span></div><div class="line">        <span class="keyword">local</span> ok, err = mysqlConn:set_keepalive(<span class="number">0</span>, <span class="number">1000</span>)</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">            mysqlConn:close()</div><div class="line">            ok = <span class="keyword">false</span></div><div class="line">            err = <span class="string">"MySQL.Error ( "</span>..(err <span class="keyword">or</span> <span class="string">"null"</span>)..<span class="string">" ) "</span></div><div class="line">        <span class="keyword">end</span></div><div class="line">    <span class="keyword">end</span> </div><div class="line">    <span class="keyword">return</span> ok, db_type, err</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql, err = getMysql()</div><div class="line"><span class="keyword">if</span> <span class="keyword">not</span> mysql <span class="keyword">then</span></div><div class="line">    ngx.say(err)</div><div class="line"><span class="keyword">else</span></div><div class="line">    <span class="keyword">local</span> sql = <span class="string">"SELECT * FROM help_topic"</span></div><div class="line">    <span class="keyword">local</span> res1, err, errno, sqlstate = mysql:query(sql)</div><div class="line"></div><div class="line">    <span class="comment">-- ngx.log(ngx.ERR, "get_reused_times: "..mysql:get_reused_times())</span></div><div class="line"></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> res1 <span class="keyword">then</span></div><div class="line">        ngx.say(JSON.encode(&#123;<span class="string">"query failed!"</span>&#125;))</div><div class="line">    <span class="keyword">else</span></div><div class="line">        ngx.say(JSON.encode(res1))</div><div class="line">    <span class="keyword">end</span></div><div class="line">    releaseConn(mysql)</div><div class="line">    ngx.exit(ngx.HTTP_OK)</div><div class="line">    <span class="keyword">return</span></div><div class="line"><span class="keyword">end</span></div></pre></td></tr></table></figure>
+<p>wrk本机压测结果。<br>不使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql </div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency     1.16s   386.87ms   1.99s    62.06%</div><div class="line">    Req/Sec    19.50     15.57    90.00     79.12%</div><div class="line">  2454 requests in 30.08s, 1.72GB read</div><div class="line">  Socket errors: connect 0, read 0, write 0, timeout 100</div><div class="line">Requests/sec:     81.59</div><div class="line">Transfer/sec:     58.51MB</div></pre></td></tr></table></figure></p>
+<p>使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql</div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency    93.98ms  113.50ms   1.81s    99.24%</div><div class="line">    Req/Sec    57.05     31.40   111.00     47.95%</div><div class="line">  2673 requests in 30.09s, 1.87GB read</div><div class="line">  Socket errors: connect 0, read 18, write 0, timeout 30</div><div class="line">Requests/sec:     88.84</div><div class="line">Transfer/sec:     63.71MB</div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。&lt;br&gt;在
+    
+    </summary>
+    
+      <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
+    
+      <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
+    
+  </entry>
+  
+  <entry>
     <title>根据经纬度计算两个城市间的距离</title>
-    <link href="https://7byte.github.io/2017/02/05/distanceoftwocity/"/>
-    <id>https://7byte.github.io/2017/02/05/distanceoftwocity/</id>
-    <published>2017-02-05T08:16:27.000Z</published>
-    <updated>2017-02-05T11:54:24.599Z</updated>
+    <link href="https://7byte.github.io/2018/01/05/distanceoftwocity/"/>
+    <id>https://7byte.github.io/2018/01/05/distanceoftwocity/</id>
+    <published>2018-01-05T08:16:27.000Z</published>
+    <updated>2019-07-03T15:46:27.487Z</updated>
     
     <content type="html"><![CDATA[<p>非常简单的golang小练习，这个问题最大的难点在于求两点的球面距离，所以这实际上是一道立体几何题，当然如果不记得公式咱们可以百度……废话不多说了，直接上代码。</p>
 <p>city.go<br><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> city</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">    <span class="string">"encoding/csv"</span></div><div class="line">    <span class="string">"math"</span></div><div class="line">    <span class="string">"os"</span></div><div class="line">    <span class="string">"strconv"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="keyword">var</span> (</div><div class="line">    radius = <span class="keyword">float64</span>(<span class="number">6371000</span>)</div><div class="line">    rad    = math.Pi / <span class="number">180.0</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="comment">// info 城市经纬度信息</span></div><div class="line"><span class="keyword">type</span> info <span class="keyword">struct</span> &#123;</div><div class="line">    name <span class="keyword">string</span></div><div class="line">    lng  <span class="keyword">float64</span> <span class="comment">//经度</span></div><div class="line">    lat  <span class="keyword">float64</span> <span class="comment">//纬度</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// Manager 城市管理</span></div><div class="line"><span class="keyword">type</span> Manager <span class="keyword">struct</span> &#123;</div><div class="line">    citys <span class="keyword">map</span>[<span class="keyword">string</span>]*info</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// NewCityConfig 读取坐标配置，创建管理器</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewCityConfig</span><span class="params">(file <span class="keyword">string</span>)</span> <span class="params">(c *Manager, err error)</span></span> &#123;</div><div class="line">    c = &amp;Manager&#123;&#125;</div><div class="line">    c.citys, err = c.parseCityInfo(file)</div><div class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// GetDistance 计算两个城市间的距离</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Manager)</span> <span class="title">GetDistance</span><span class="params">(city1 <span class="keyword">string</span>, city2 <span class="keyword">string</span>)</span> <span class="params">(dist <span class="keyword">float64</span>, err error)</span></span> &#123;</div><div class="line">    c1 := c.citys[city1]</div><div class="line">    c2 := c.citys[city2]</div><div class="line">    <span class="keyword">if</span> c1 == <span class="literal">nil</span> || c2 == <span class="literal">nil</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="number">0.0</span>, <span class="literal">nil</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    dist = c.earthDistance(c1, c2)</div><div class="line"></div><div class="line">    <span class="keyword">return</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// earthDistance 计算距离</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Manager)</span> <span class="title">earthDistance</span><span class="params">(city1 *info, city2 *info)</span> <span class="title">float64</span></span> &#123;</div><div class="line">    lng1 := city1.lng * rad</div><div class="line">    lat1 := city1.lat * rad</div><div class="line">    lng2 := city2.lng * rad</div><div class="line">    lat2 := city2.lat * rad</div><div class="line">    theta := lng2 - lng1</div><div class="line">    dist := math.Acos(math.Sin(lat1)*math.Sin(lat2) + math.Cos(lat1)*math.Cos(lat2)*math.Cos(theta))</div><div class="line">    <span class="keyword">return</span> dist * radius</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// parseCityInfo 载入城市经纬度</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Manager)</span> <span class="title">parseCityInfo</span><span class="params">(filepath <span class="keyword">string</span>)</span> <span class="params">(locations <span class="keyword">map</span>[<span class="keyword">string</span>]*info, err error)</span></span> &#123;</div><div class="line">    f, err := os.Open(filepath)</div><div class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">defer</span> f.Close()</div><div class="line"></div><div class="line">    reader := csv.NewReader(f)</div><div class="line">    record, err := reader.ReadAll()</div><div class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    locations = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]*info, <span class="number">0</span>)</div><div class="line">    <span class="keyword">for</span> _, a := <span class="keyword">range</span> record &#123;</div><div class="line">        city := &amp;info&#123;name: a[<span class="number">0</span>]&#125;</div><div class="line">        lng, err := strconv.ParseFloat(a[<span class="number">1</span>], <span class="number">64</span>)</div><div class="line">        <span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</div><div class="line">            city.lng = lng</div><div class="line">        &#125;</div><div class="line">        lat, err := strconv.ParseFloat(a[<span class="number">2</span>], <span class="number">64</span>)</div><div class="line">        <span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</div><div class="line">            city.lat = lat</div><div class="line">        &#125;</div><div class="line">        locations[city.name] = city</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">return</span> locations, <span class="literal">nil</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
@@ -334,11 +413,11 @@
   </entry>
   
   <entry>
-    <title>nginx反向代理（翻译）</title>
-    <link href="https://7byte.github.io/2016/12/11/nginx-reverse-proxy/"/>
-    <id>https://7byte.github.io/2016/12/11/nginx-reverse-proxy/</id>
-    <published>2016-12-11T03:16:27.000Z</published>
-    <updated>2016-12-26T13:35:05.365Z</updated>
+    <title>nginx反向代理</title>
+    <link href="https://7byte.github.io/2017/12/11/nginx-reverse-proxy/"/>
+    <id>https://7byte.github.io/2017/12/11/nginx-reverse-proxy/</id>
+    <published>2017-12-11T03:16:27.000Z</published>
+    <updated>2019-07-03T15:50:38.887Z</updated>
     
     <content type="html"><![CDATA[<blockquote>
 <p>英文原文：<a href="https://www.nginx.com/resources/admin-guide/reverse-proxy/" target="_blank" rel="external">https://www.nginx.com/resources/admin-guide/reverse-proxy/</a></p>
@@ -406,11 +485,69 @@
   </entry>
   
   <entry>
+    <title>nginx gzip</title>
+    <link href="https://7byte.github.io/2017/01/17/trytouse-gzip/"/>
+    <id>https://7byte.github.io/2017/01/17/trytouse-gzip/</id>
+    <published>2017-01-17T07:21:27.000Z</published>
+    <updated>2019-07-03T15:50:12.511Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="nginx-gzip"><a href="#nginx-gzip" class="headerlink" title="nginx gzip"></a>nginx gzip</h2><blockquote>
+<p>The <a href="http://nginx.org/en/docs/http/ngx_http_gzip_module.html" target="_blank" rel="external">ngx_http_gzip_module</a> module is a filter that compresses responses using the “gzip” method. This often helps to reduce the size of transmitted data by half or even more.</p>
+</blockquote>
+<p>根据官网文档说明，通过开启nginx gzip压缩，数据传输量可以减少一半甚至更多。在网络带宽成为瓶颈的情况下，gzip带来的提升无疑是相当有诱惑力的。</p>
+<p><strong>未开启gzip：</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -c200 -d30s http://120.25.176.131/testMysql</div><div class="line">Running 30s test @ http://120.25.176.131/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency     0.00us    0.00us   0.00us    -nan%</div><div class="line">    Req/Sec     0.00      0.00     0.00      -nan%</div><div class="line">  0 requests in 30.01s, 4.04MB read</div><div class="line">Requests/sec:      0.00</div><div class="line">Transfer/sec:    137.73KB</div></pre></td></tr></table></figure></p>
+<p>惨不忍睹，基本上是把服务器压死了。</p>
+<p><strong>开启gzip：</strong><br>按照官网示例，在nginx.conf添加下面的配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">gzip            on;</div><div class="line">gzip_min_length 1000;</div><div class="line">gzip_proxied    expired no-cache no-store private auth;</div><div class="line">gzip_types      text/plain application/xml;</div></pre></td></tr></table></figure></p>
+<p>压测结果<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -c200 -d30s http://120.25.176.131/testMysql</div><div class="line">Running 30s test @ http://120.25.176.131/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency     0.00us    0.00us   0.00us    -nan%</div><div class="line">    Req/Sec     0.00      0.00     0.00      -nan%</div><div class="line">  0 requests in 30.02s, 4.02MB read</div><div class="line">Requests/sec:      0.00</div><div class="line">Transfer/sec:    137.12KB</div></pre></td></tr></table></figure></p>
+<p>好吧，从压测结果来看，并没有什么明显的改善。。。没办法，这台服务器配置实在够差。<br>但是，通过chrome浏览器提供的调试工具，可以看到API的返回数据两压缩了6倍左右，从用户的角度来说就是接口响应变快了，用户体验当然更好。</p>
+<table>
+<thead>
+<tr>
+<th>-</th>
+<th style="text-align:right">数据长度</th>
+<th style="text-align:right">Waiting(TTFB)</th>
+<th style="text-align:right">Content Download</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>关闭gzip</td>
+<td style="text-align:right">734KB</td>
+<td style="text-align:right">20.67ms</td>
+<td style="text-align:right">4.56s</td>
+</tr>
+<tr>
+<td>开启gzip</td>
+<td style="text-align:right">229KB</td>
+<td style="text-align:right">29.58ms</td>
+<td style="text-align:right">699.19ms</td>
+</tr>
+</tbody>
+</table>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;nginx-gzip&quot;&gt;&lt;a href=&quot;#nginx-gzip&quot; class=&quot;headerlink&quot; title=&quot;nginx gzip&quot;&gt;&lt;/a&gt;nginx gzip&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;The &lt;a href=&quot;http://nginx
+    
+    </summary>
+    
+      <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
+    
+    
+      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
+    
+      <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
+    
+  </entry>
+  
+  <entry>
     <title>golang环境搭建</title>
-    <link href="https://7byte.github.io/2016/11/14/trytouse-golang/"/>
-    <id>https://7byte.github.io/2016/11/14/trytouse-golang/</id>
-    <published>2016-11-14T06:33:04.000Z</published>
-    <updated>2017-01-15T14:58:52.707Z</updated>
+    <link href="https://7byte.github.io/2017/01/14/trytouse-golang/"/>
+    <id>https://7byte.github.io/2017/01/14/trytouse-golang/</id>
+    <published>2017-01-14T06:33:04.000Z</published>
+    <updated>2019-07-03T15:36:21.497Z</updated>
     
     <content type="html"><![CDATA[<p>最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。<br>本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（<a href="https://golang.org/doc/install" target="_blank" rel="external">安装golang</a>），以及安装包下载页面（<a href="https://golang.org/dl/" target="_blank" rel="external">下载安装包</a>）。<br>本人目前还买不起Mac，故无法验证Mac上安装流程的可行性，等将来剁手了再来补充相关内容。</p>
 <p><strong><em>温馨提示：部分步骤可能需要科学上网。</em></strong></p>
@@ -491,39 +628,11 @@
   </entry>
   
   <entry>
-    <title>openresty中连接池的应用</title>
-    <link href="https://7byte.github.io/2016/10/02/trytouse-conn-pool/"/>
-    <id>https://7byte.github.io/2016/10/02/trytouse-conn-pool/</id>
-    <published>2016-10-02T07:16:27.000Z</published>
-    <updated>2016-11-20T10:59:54.517Z</updated>
-    
-    <content type="html"><![CDATA[<p>在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。<br>在 OpenResty 中，所有具备 set_keepalive 的类、库函数，说明他都是支持连接池的。这里举个mysql连接池的例子，其它类型的连接池比如redis连接池、线程池、内存池思路是一样的。</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">local</span> MYSQL = <span class="built_in">require</span>(<span class="string">"resty.mysql"</span>)</div><div class="line"><span class="keyword">local</span> JSON  = <span class="built_in">require</span>(<span class="string">"cjson"</span>)</div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql_server_ip                       =   <span class="string">"127.0.0.1"</span></div><div class="line"><span class="keyword">local</span> mysql_server_port                     =   <span class="number">3306</span></div><div class="line"><span class="keyword">local</span> mysql_databases                       =   <span class="string">"mysql"</span></div><div class="line"><span class="keyword">local</span> mysql_user_name                       =   <span class="string">"7byte"</span></div><div class="line"><span class="keyword">local</span> mysql_user_pass                       =   <span class="string">"abcdefg"</span></div><div class="line"><span class="keyword">local</span> mysql_max_packet_size                 =   <span class="number">1024</span> * <span class="number">1024</span></div><div class="line"></div><div class="line"><span class="comment">-- 获取mysql连接，mysql:connect先在连接池中查找是否有可用的连接，没有才创建一个新连接</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">getMysql</span><span class="params">()</span></span></div><div class="line">    <span class="keyword">local</span> mysql = MYSQL:new()</div><div class="line">    mysql:set_timeout(<span class="number">1000</span>)</div><div class="line">    <span class="keyword">local</span> ok, err, errno, sqlstate = mysql:connect&#123;</div><div class="line">        host = mysql_server_ip,</div><div class="line">        port = mysql_server_port,</div><div class="line">        database = mysql_databases,</div><div class="line">        user = mysql_user_name,</div><div class="line">        password = mysql_user_pass,</div><div class="line">        max_packet_size = mysql_max_packet_size,</div><div class="line">        charset=utf8 &#125;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">        <span class="keyword">return</span> <span class="keyword">nil</span>, err, errno, sqlstate</div><div class="line">    <span class="keyword">end</span></div><div class="line">    <span class="keyword">return</span> mysql,<span class="keyword">nil</span>,<span class="keyword">nil</span>,sqlstate</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="comment">-- 释放mysql连接，放入连接池</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">releaseConn</span><span class="params">(mysqlConn)</span></span></div><div class="line">    <span class="keyword">local</span> ok = <span class="keyword">true</span></div><div class="line">    <span class="keyword">local</span> db_type = <span class="number">0</span></div><div class="line">    <span class="keyword">local</span> err = <span class="string">""</span></div><div class="line">    <span class="keyword">if</span> mysqlConn <span class="keyword">then</span></div><div class="line">        <span class="keyword">local</span> res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">while</span> err == <span class="string">"again"</span> <span class="keyword">do</span></div><div class="line">            res, err, errno, sqlstate = mysqlConn:read_result()</div><div class="line">        <span class="keyword">end</span></div><div class="line">        <span class="comment">-- setkeepalive(maxidletimeout, poolsize)</span></div><div class="line">        <span class="keyword">local</span> ok, err = mysqlConn:set_keepalive(<span class="number">0</span>, <span class="number">1000</span>)</div><div class="line">        <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></div><div class="line">            mysqlConn:close()</div><div class="line">            ok = <span class="keyword">false</span></div><div class="line">            err = <span class="string">"MySQL.Error ( "</span>..(err <span class="keyword">or</span> <span class="string">"null"</span>)..<span class="string">" ) "</span></div><div class="line">        <span class="keyword">end</span></div><div class="line">    <span class="keyword">end</span> </div><div class="line">    <span class="keyword">return</span> ok, db_type, err</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line"><span class="keyword">local</span> mysql, err = getMysql()</div><div class="line"><span class="keyword">if</span> <span class="keyword">not</span> mysql <span class="keyword">then</span></div><div class="line">    ngx.say(err)</div><div class="line"><span class="keyword">else</span></div><div class="line">    <span class="keyword">local</span> sql = <span class="string">"SELECT * FROM help_topic"</span></div><div class="line">    <span class="keyword">local</span> res1, err, errno, sqlstate = mysql:query(sql)</div><div class="line"></div><div class="line">    <span class="comment">-- ngx.log(ngx.ERR, "get_reused_times: "..mysql:get_reused_times())</span></div><div class="line"></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> res1 <span class="keyword">then</span></div><div class="line">        ngx.say(JSON.encode(&#123;<span class="string">"query failed!"</span>&#125;))</div><div class="line">    <span class="keyword">else</span></div><div class="line">        ngx.say(JSON.encode(res1))</div><div class="line">    <span class="keyword">end</span></div><div class="line">    releaseConn(mysql)</div><div class="line">    ngx.exit(ngx.HTTP_OK)</div><div class="line">    <span class="keyword">return</span></div><div class="line"><span class="keyword">end</span></div></pre></td></tr></table></figure>
-<p>wrk本机压测结果。<br>不使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql </div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency     1.16s   386.87ms   1.99s    62.06%</div><div class="line">    Req/Sec    19.50     15.57    90.00     79.12%</div><div class="line">  2454 requests in 30.08s, 1.72GB read</div><div class="line">  Socket errors: connect 0, read 0, write 0, timeout 100</div><div class="line">Requests/sec:     81.59</div><div class="line">Transfer/sec:     58.51MB</div></pre></td></tr></table></figure></p>
-<p>使用连接池<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ./wrk -t10 -d30s -c200 http://127.0.0.1/testMysql</div><div class="line">Running 30s test @ http://127.0.0.1/testMysql</div><div class="line">  10 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency    93.98ms  113.50ms   1.81s    99.24%</div><div class="line">    Req/Sec    57.05     31.40   111.00     47.95%</div><div class="line">  2673 requests in 30.09s, 1.87GB read</div><div class="line">  Socket errors: connect 0, read 18, write 0, timeout 30</div><div class="line">Requests/sec:     88.84</div><div class="line">Transfer/sec:     63.71MB</div></pre></td></tr></table></figure></p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;在各种形式的数据交互中，创建连接、传输数据、销毁连接这三个步骤都是必不可少的。但是，当并发量持续增加时，耗费在创建和销毁连接上的时间将越来越不容忽视，所以理想中的情况应该是这样：创建连接-传输数据-……-传输数据-销毁连接。连接池正是为了解决这种问题而产生的技术。&lt;br&gt;在
-    
-    </summary>
-    
-      <category term="openresty" scheme="https://7byte.github.io/categories/openresty/"/>
-    
-    
-      <category term="nginx" scheme="https://7byte.github.io/tags/nginx/"/>
-    
-      <category term="openresty" scheme="https://7byte.github.io/tags/openresty/"/>
-    
-  </entry>
-  
-  <entry>
     <title>wrk压力测试</title>
-    <link href="https://7byte.github.io/2016/10/02/trytouse-wrk/"/>
-    <id>https://7byte.github.io/2016/10/02/trytouse-wrk/</id>
-    <published>2016-10-02T07:12:27.000Z</published>
-    <updated>2016-11-20T10:59:54.518Z</updated>
+    <link href="https://7byte.github.io/2017/01/12/trytouse-wrk/"/>
+    <id>https://7byte.github.io/2017/01/12/trytouse-wrk/</id>
+    <published>2017-01-12T07:12:27.000Z</published>
+    <updated>2019-07-03T15:35:22.250Z</updated>
     
     <content type="html"><![CDATA[<p><a href="https://github.com/wg/wrk" target="_blank" rel="external">wrk</a>是一个开源的http性能测试工具，项目在github维护<br>wrk的使用非常简单，首先需要已经安装了git，gcc这两个基础工具，然后依次执行下面的3个命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ git clone https://github.com/wg/wrk.git  </div><div class="line">$ cd wrk  </div><div class="line">$ make</div></pre></td></tr></table></figure></p>
 <p>编译成功会在目录下生成执行文件wrk，准备工作完成。<br>参考github上给出的例子，做一下简单的使用说明。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ wrk -t12 -c400 -d30s http://127.0.0.1:8080/index.html</div></pre></td></tr></table></figure></p>
@@ -547,10 +656,10 @@
   
   <entry>
     <title>动态追踪工具——火焰图</title>
-    <link href="https://7byte.github.io/2016/10/02/trytouse-FlameGraph/"/>
-    <id>https://7byte.github.io/2016/10/02/trytouse-FlameGraph/</id>
-    <published>2016-10-02T07:10:27.000Z</published>
-    <updated>2016-11-20T10:59:54.516Z</updated>
+    <link href="https://7byte.github.io/2017/01/02/trytouse-FlameGraph/"/>
+    <id>https://7byte.github.io/2017/01/02/trytouse-FlameGraph/</id>
+    <published>2017-01-02T07:10:27.000Z</published>
+    <updated>2019-07-03T15:47:12.672Z</updated>
     
     <content type="html"><![CDATA[<blockquote>
 <p>火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——<a href="https://openresty.org/posts/dynamic-tracing/" target="_blank" rel="external">动态追踪技术漫谈</a></p>
